@@ -16,6 +16,9 @@ import {
   getAlgorithmName,
 } from '@/models/algorithms';
 import { TargetedEvent } from 'preact/compat';
+import ImageJSRootPreview from './ImageJSRootPreview.js';
+
+
 
 const convert = (
   bytesToProcess: Uint8Array<ArrayBufferLike>,
@@ -205,14 +208,14 @@ const ImageConverter = () => {
     >
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
-          <ImagePreview
+          <ImageJSRootPreview
             imageUrl={imgSrc}
-            header={'Original Image'}
+            header="Original Image (JSROOT)"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
-            emptyText={'No image selected'}
             error={errorMessage}
           />
+
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImagePreview
