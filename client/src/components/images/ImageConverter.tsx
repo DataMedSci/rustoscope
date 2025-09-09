@@ -218,16 +218,12 @@ const ImageConverter = () => {
 
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
-          <ImagePreview
+          <ImageJSRootPreview
             imageUrl={imgResult}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
-            emptyText={
-              imgSrc
-                ? "Select conversion type and press 'Run'"
-                : 'No image selected'
-            }
+            error={errorMessage}
           />
           
           {/* Progress Indicator */}
