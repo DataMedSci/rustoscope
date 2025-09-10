@@ -1,91 +1,128 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { draw, createHistogram, settings } from 'jsroot'; 
+import { BIT, createHistogram, draw } from 'jsroot';
 
-type ImageJsrootPreviewProps = {
-  imageUrl: string | null;
+type TypedPixels = Uint8Array | Uint16Array | Float32Array;
+
+type ImagePreviewProps = {
+  /** Raw grayscale pixel buffer; one sample per pixel (row-major, X fastest) */
+  pixels: TypedPixels | null;
+  /** Image width & height in pixels */
+  width: number | null;
+  height: number | null;
   header?: string;
+  emptyText?: string;
   aspectRatio: number;
   setAspectRatio: (ratio: number) => void;
   error?: string;
 };
 
-const ImageJsrootPreview = ({
-  imageUrl,
+const DRAW_OPTS = 'colz;gridxy;nostat;tickxy';
+
+const ImagePreview = ({
+  pixels,
+  width,
+  height,
   header,
+  emptyText,
   aspectRatio,
   setAspectRatio,
   error,
-}: ImageJsrootPreviewProps) => {
-  const plotRef = useRef<HTMLDivElement>(null);
+}: ImagePreviewProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  const host = plotRef.current;
-  if (!imageUrl || !host) { if (host) host.innerHTML = ''; return; }
+    const host = containerRef.current;
 
-  let alive = true;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
+    // No target or no data -> clear plot and bail
+    if (!host || !pixels || !width || !height || width <= 0 || height <= 0) {
+      if (host) host.innerHTML = '';
+      return;
+    }
 
-  img.onload = async () => {
-    if (!alive) return;
 
-    setAspectRatio(img.naturalWidth / img.naturalHeight);
+    // Keep the layout box stable
+    setAspectRatio(width / height);
 
-    const w = img.naturalWidth, h = img.naturalHeight;
+    // Build histogram and draw
+    const w = width;
+    const h = height;
 
-    // Decode pixels via canvas (you can downsample here if needed)
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-    ctx.drawImage(img, 0, 0);
-    const { data } = ctx.getImageData(0, 0, w, h);
+    // Clear any previous drawing to avoid stacking
+    host.innerHTML = '';
 
-    // ✅ Create a real TH2 with allocated bins
-    const h2 = createHistogram('TH2F', w, h);
-    h2.fName = 'image_hist';
-    h2.fTitle = header = '';
-    h2.fXaxis.fXmin = 0; h2.fXaxis.fXmax = w;
-    h2.fYaxis.fXmin = 0; h2.fYaxis.fXmax = h;
+    const hist = createHistogram('TH2F', w, h);
 
-    // Fill (flip Y so image isn't upside-down)
+    // Axes (in pixels)
+    hist.fXaxis.fXmin = 0; hist.fXaxis.fXmax = w;
+    hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h;
+    hist.fXaxis.fTitle = 'X [px]';
+    hist.fYaxis.fTitle = 'Y [px]';
+    hist.fTitle = header = '';
+
+    // Center axis titles + offset (same trick as in JsRootGraph2D)
+    hist.fXaxis.InvertBit(BIT(12));
+    hist.fYaxis.InvertBit(BIT(12));
+    hist.fXaxis.fTitleOffset = 1.4;
+    hist.fYaxis.fTitleOffset = 1.4;
+
+    // Fill from grayscale buffer; flip Y so top-left stays top-left
+    let zmin = Number.POSITIVE_INFINITY;
+    let zmax = Number.NEGATIVE_INFINITY;
+
     for (let y = 0; y < h; y++) {
-      const yp = h - 1 - y; // flip
+      const yp = h - 1 - y; // flip vertically for plotting
+      const rowOff = y * w;
       for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        const gray = Math.round(0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]);
-        h2.setBinContent(h2.getBin(x + 1, yp + 1), gray);
+        const v = (pixels as any)[rowOff + x]; // works for all TypedArrays
+        if (v < zmin) zmin = v;
+        if (v > zmax) zmax = v;
+        hist.setBinContent(hist.getBin(x + 1, yp + 1), v);
       }
     }
 
-    // Help JSROOT with Z scaling
-    h2.fMinimum = 0;
-    h2.fMaximum = 255;
+    // Z scaling (avoid zero-range)
+    if (!Number.isFinite(zmin) || !Number.isFinite(zmax)) {
+      zmin = 0; zmax = 1;
+    } else if (zmin === zmax) {
+      zmin = Math.max(0, zmin - 1);
+      zmax = zmax + 1;
+    }
+    hist.fMinimum = zmin;
+    hist.fMaximum = zmax;
 
-    await draw(host, h2, 'colz;nostat;tickxy');
-  };
+    // Draw (returns a Promise; we don't need to await)
+    void draw(host, hist, DRAW_OPTS);
 
-  img.onerror = () => console.error('Failed to load image:', imageUrl);
-  img.src = imageUrl;
+    // Cleanup on unmount/re-render
+    return () => {
+      if (host) host.innerHTML = '';
+    };
+  }, [pixels, width, height, header, setAspectRatio]);
 
-  return () => { alive = false; host.innerHTML = ''; };
-}, [imageUrl, header, setAspectRatio]);
-
-  const previewStyle = {
-    aspectRatio: aspectRatio.toFixed(5),
-  };
+  const previewStyle = { aspectRatio: aspectRatio.toFixed(5) };
 
   return (
     <div className="w-full flex flex-col items-center justify-center p-2">
       {header && <div className="text-xl font-bold p-2">{header}</div>}
-      <div
-        ref={plotRef}
-        style={previewStyle}
-        className="w-full rounded-md bg-gray-50 shadow-md"
-      />
+
+      {pixels && width && height ? (
+        <div
+          ref={containerRef}
+          style={previewStyle}
+          className="w-full rounded-md bg-gray-50 shadow-md overflow-hidden"
+        />
+      ) : (
+        <div
+          className="w-full flex justify-center items-center rounded-md border-2 border-dashed border-gray-300 bg-gray-50 shadow-sm"
+          style={previewStyle}
+        >
+          <p className="text-gray-600">{emptyText || 'No image available'}</p>
+        </div>
+      )}
+
       {error && <span className="mt-5 text-red-600">{error}</span>}
     </div>
   );
 };
 
-export default ImageJsrootPreview;
+export default ImagePreview;

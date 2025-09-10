@@ -1,9 +1,49 @@
 use image::{DynamicImage, ImageBuffer, ImageError, ImageOutputFormat, Rgb};
 use imageproc::filter::median_filter;
+use js_sys::Uint8Array;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
 // Functions used in the client code
+
+#[wasm_bindgen]
+pub fn get_raw_grayscale_pixels_with_dimensions(image_bytes: &[u8]) -> Result<JsValue, JsValue> {
+    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
+    let gray = img.to_luma8();
+    let (width, height) = gray.dimensions();
+    let pixels: Vec<u8> = gray.into_raw();
+
+    let ua = Uint8Array::from(pixels.as_slice());
+    let obj = js_sys::Object::new();
+    js_sys::Reflect::set(&obj, &JsValue::from_str("pixels"), &ua.into())
+        .map_err(|_| JsValue::from_str("Failed to set pixels"))?;
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("width"),
+        &JsValue::from_f64(width as f64),
+    )
+    .map_err(|_| JsValue::from_str("Failed to set width"))?;
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("height"),
+        &JsValue::from_f64(height as f64),
+    )
+    .map_err(|_| JsValue::from_str("Failed to set height"))?;
+    // diagnostic fields
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("channels"),
+        &JsValue::from_f64(1.0),
+    )
+    .map_err(|_| JsValue::from_str("Failed to set channels"))?;
+    js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("length"),
+        &JsValue::from_f64(pixels.len() as f64),
+    )
+    .map_err(|_| JsValue::from_str("Failed to set length"))?;
+    Ok(JsValue::from(obj))
+}
 
 #[wasm_bindgen]
 pub fn to_grayscale(image: &[u8]) -> Result<Vec<u8>, JsValue> {

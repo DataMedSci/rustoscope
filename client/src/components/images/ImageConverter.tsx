@@ -7,6 +7,7 @@ import {
   clip_pixels_with_percentiles,
   gaussian_blur,
   median_blur,
+  get_raw_grayscale_pixels_with_dimensions,
 } from '@/wasm';
 import ImagePreview from './ImagePreview.jsx';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
@@ -70,6 +71,9 @@ const ImageConverter = () => {
   const [imgResult, setImgResult] = useState<string | null>(null);
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
+  const [rawPixels, setRawPixels] = useState<Uint8Array | null>(null);
+  const [image_width, setImageWidth] = useState<number | null>(null);
+  const [image_height, setImageHeight] = useState<number | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -102,24 +106,40 @@ const ImageConverter = () => {
     const file = e.currentTarget.files?.[0];
     if (!file) return;
 
+    if (!wasmReady) {
+      setErrorMessage('WASM engine not ready — try again in a moment');
+      return;
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
-
     setErrorMessage(undefined);
 
     try {
       const processedBytes = processBytes(file.type, bytes);
       setRawBytes(processedBytes);
+
+      // call wasm and log the raw result object before destructuring
+      const res: any = await get_raw_grayscale_pixels_with_dimensions(processedBytes);
       
+      // defensive unpacking
+      const rawPixels = res?.pixels instanceof Uint8Array ? res.pixels : new Uint8Array(res?.pixels ?? []);
+      const image_width = Number(res?.width ?? null);
+      const image_height = Number(res?.height ?? null);
+
+      setRawPixels(rawPixels);
+      setImageWidth(image_width);
+      setImageHeight(image_height);
+
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
       }
-      
+
       const blob = new Blob([processedBytes]);
       const newUrl = URL.createObjectURL(blob);
       prevSrcUrlRef.current = newUrl;
       setImgSrc(newUrl);
-      
+
       if (prevResultUrlRef.current) {
         URL.revokeObjectURL(prevResultUrlRef.current);
         prevResultUrlRef.current = null;
@@ -209,7 +229,9 @@ const ImageConverter = () => {
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
-            imageUrl={imgSrc}
+            pixels={rawPixels}
+            width={image_width}
+            height={image_height}
             header="Original Image (JSROOT)"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
@@ -219,7 +241,9 @@ const ImageConverter = () => {
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
-            imageUrl={imgResult}
+            pixels={rawBytes}
+            width={1024}
+            height={1024}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
