@@ -79,6 +79,8 @@ const ImageConverter = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [currentAlgorithm, setCurrentAlgorithm] = useState<string>('');
+  const [units, setUnits] = useState<'px' | 'mm'>('px');
+  const [mmPerPx, setMmPerPx] = useState<number>(0.14);
   
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -236,18 +238,22 @@ const ImageConverter = () => {
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
             error={errorMessage}
+            units={units}
+            mmPerPx={mmPerPx}
           />
 
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
             pixels={rawBytes}
-            width={1024}
-            height={1024}
+            width={image_width}
+            height={image_height}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
             error={errorMessage}
+            units={units}
+            mmPerPx={mmPerPx}
           />
           
           {/* Progress Indicator */}
@@ -299,6 +305,51 @@ const ImageConverter = () => {
             {isProcessing ? 'Processing...' : 'Run'}
           </button>
         </div>
+        
+  <div className="mb-4 p-3 rounded-md border border-gray-200 bg-white">
+  <div className="text-sm font-semibold mb-2">Units</div>
+
+  <div className="flex items-center gap-4 mb-2 flex-nowrap">
+    <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
+      <input
+        type="radio"
+        name="units"
+        value="px"
+        checked={units === 'px'}
+        onChange={() => setUnits('px')}
+      />
+      <span>Pixels</span>
+    </label>
+
+    <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
+      <input
+        type="radio"
+        name="units"
+        value="mm"
+        checked={units === 'mm'}
+        onChange={() => setUnits('mm')}
+      />
+      <span>Millimeters</span>
+    </label>
+
+      {units === 'mm' && (
+    <div className="flex-1 flex justify-center min-w-0">
+      <input
+        type="text"
+        inputMode="decimal"
+        autoComplete={'off'}
+        className="w-20 flex-none rounded-md border border-gray-300 px-2 py-1 text-right"
+        value={mmPerPx}
+        onInput={(e) => {
+          const v = Number((e as any).currentTarget.value.replace(',', '.'));
+          if (Number.isFinite(v) && v > 0) setMmPerPx(v);
+        }}
+      />
+      <span className="text-s text-gray-500 self-center px-1">mm/px</span>
+    </div>
+  )}
+  </div>
+</div>
 
         <AlgorithmsContainer
           algorithms={algorithms}

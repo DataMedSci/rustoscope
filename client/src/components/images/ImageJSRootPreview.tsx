@@ -14,6 +14,8 @@ type ImagePreviewProps = {
   aspectRatio: number;
   setAspectRatio: (ratio: number) => void;
   error?: string;
+  units?: 'px' | 'mm';
+  mmPerPx?: number;
 };
 
 const DRAW_OPTS = 'colz;gridxy;nostat;tickxy';
@@ -27,6 +29,8 @@ const ImagePreview = ({
   aspectRatio,
   setAspectRatio,
   error,
+  units = 'px',
+  mmPerPx = 0.14,
 }: ImagePreviewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,11 +57,18 @@ const ImagePreview = ({
     const hist = createHistogram('TH2F', w, h);
 
     // Axes (in pixels)
-    hist.fXaxis.fXmin = 0; hist.fXaxis.fXmax = w;
-    hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h;
-    hist.fXaxis.fTitle = 'X [px]';
-    hist.fYaxis.fTitle = 'Y [px]';
-    hist.fTitle = header = '';
+    // hist.fXaxis.fXmin = 0; hist.fXaxis.fXmax = w;
+    // hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h;
+    // hist.fXaxis.fTitle = 'X [px]';
+    // hist.fYaxis.fTitle = 'Y [px]';
+    // hist.fTitle = header = '';
+
+    const scale = units === 'mm' ? Math.max(1e-12, mmPerPx) : 1;
+    hist.fXaxis.fXmin = 0; hist.fXaxis.fXmax = w * scale;
+    hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h * scale;
+    hist.fXaxis.fTitle = units === 'mm' ? 'X [mm]' : 'X [px]';
+    hist.fYaxis.fTitle = units === 'mm' ? 'Y [mm]' : 'Y [px]';
+    hist.fTitle = header ?? 'Image';
 
     // Center axis titles + offset (same trick as in JsRootGraph2D)
     hist.fXaxis.InvertBit(BIT(12));
@@ -97,7 +108,7 @@ const ImagePreview = ({
     return () => {
       if (host) host.innerHTML = '';
     };
-  }, [pixels, width, height, header, setAspectRatio]);
+  }, [pixels, width, height, header, setAspectRatio,units, mmPerPx]);
 
   const previewStyle = { aspectRatio: aspectRatio.toFixed(5) };
 
