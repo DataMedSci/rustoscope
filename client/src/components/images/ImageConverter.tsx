@@ -7,9 +7,10 @@ import {
   clip_pixels_with_percentiles,
   gaussian_blur,
   median_blur,
-  get_raw_grayscale_pixels_with_dimensions,
+  get_raw_grayscale_pixels,
+  get_image_dimensions,
 } from '@/wasm';
-import ImagePreview from './ImagePreview.jsx';
+// import ImagePreview from './ImagePreview.jsx';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
   ConversionAlgorithm,
@@ -17,7 +18,7 @@ import {
   getAlgorithmName,
 } from '@/models/algorithms';
 import { TargetedEvent } from 'preact/compat';
-import ImageJSRootPreview from './ImageJSRootPreview.tsx';
+import ImageJSRootPreview from './ImageJSRootPreview';
 
 
 
@@ -72,8 +73,8 @@ const ImageConverter = () => {
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
   const [rawPixels, setRawPixels] = useState<Uint8Array | null>(null);
-  const [ImageHorizontalLength, setImageWidth] = useState<number | null>(null);
-  const [ImageVerticalLength, setImageHeight] = useState<number | null>(null);
+  const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
+  const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -121,17 +122,19 @@ const ImageConverter = () => {
       const processedBytes = processBytes(file.type, bytes);
       setRawBytes(processedBytes);
 
-      // call wasm and defensively unpack the raw result object
-      const res: any = await get_raw_grayscale_pixels_with_dimensions(processedBytes);
-      
-      // defensive unpacking
-      const rawPixels = res?.pixels instanceof Uint8Array ? res.pixels : new Uint8Array(res?.pixels ?? []);
-      const ImageHorizontalLength = Number(res?.width ?? null);
-      const ImageVerticalLength = Number(res?.height ?? null);
+      const rawPixels = get_raw_grayscale_pixels(processedBytes);
+      const dimensions = get_image_dimensions(processedBytes);
+      if (dimensions.length !== 2) {
+        throw new Error('Failed to retrieve image dimensions');
+      }
+      const [HorizontalLength, VerticalLength] = dimensions;
+      if (HorizontalLength <= 0 || VerticalLength <= 0) {
+        throw new Error('Invalid image dimensions');
+      }
 
       setRawPixels(rawPixels);
-      setImageWidth(ImageHorizontalLength);
-      setImageHeight(ImageVerticalLength);
+      setImageHorizontalLength(HorizontalLength);
+      setImageVerticalLength(VerticalLength);
 
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
