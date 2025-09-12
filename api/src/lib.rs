@@ -1,9 +1,23 @@
-use image::{DynamicImage, ImageBuffer, ImageError, ImageOutputFormat, Rgb};
+use image::{DynamicImage, GenericImageView, ImageBuffer, ImageError, ImageOutputFormat, Rgb};
 use imageproc::filter::median_filter;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
 // Functions used in the client code
+
+#[wasm_bindgen]
+pub fn get_raw_grayscale_pixels(image_bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
+    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
+    let gray = img.to_luma8();
+    Ok(gray.into_raw())
+}
+
+#[wasm_bindgen]
+pub fn get_image_dimensions(image_bytes: &[u8]) -> Result<Vec<u32>, JsValue> {
+    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
+    let (width, height) = img.dimensions();
+    Ok(vec![width, height])
+}
 
 #[wasm_bindgen]
 pub fn to_grayscale(image: &[u8]) -> Result<Vec<u8>, JsValue> {
