@@ -108,7 +108,7 @@ const ImagePreview = ({
     return () => {
       if (host) host.innerHTML = '';
     };
-  }, [pixels, width, height, header, setAspectRatio,units, mmPerPx]);
+  }, [pixels, width, height, header, setAspectRatio, units, mmPerPx]);
 
   const previewStyle = { aspectRatio: aspectRatio.toFixed(5) };
 
