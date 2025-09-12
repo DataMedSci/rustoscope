@@ -56,13 +56,6 @@ const ImagePreview = ({
 
     const hist = createHistogram('TH2F', w, h);
 
-    // Axes (in pixels)
-    // hist.fXaxis.fXmin = 0; hist.fXaxis.fXmax = w;
-    // hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h;
-    // hist.fXaxis.fTitle = 'X [px]';
-    // hist.fYaxis.fTitle = 'Y [px]';
-    // hist.fTitle = header = '';
-
     const scale = units === 'mm' ? Math.max(1e-12, mmPerPx) : 1;
     hist.fXaxis.fXmin = 0; hist.fXaxis.fXmax = w * scale;
     hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h * scale;

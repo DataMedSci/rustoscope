@@ -10,7 +10,6 @@ import {
   get_raw_grayscale_pixels,
   get_image_dimensions,
 } from '@/wasm';
-// import ImagePreview from './ImagePreview.jsx';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
   ConversionAlgorithm,
