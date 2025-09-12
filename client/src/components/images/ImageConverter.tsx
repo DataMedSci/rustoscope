@@ -121,7 +121,7 @@ const ImageConverter = () => {
       const processedBytes = processBytes(file.type, bytes);
       setRawBytes(processedBytes);
 
-      // call wasm and log the raw result object before destructuring
+      // call wasm and defensively unpack the raw result object
       const res: any = await get_raw_grayscale_pixels_with_dimensions(processedBytes);
       
       // defensive unpacking
