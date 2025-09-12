@@ -17,7 +17,7 @@ import {
   getAlgorithmName,
 } from '@/models/algorithms';
 import { TargetedEvent } from 'preact/compat';
-import ImageJSRootPreview from './ImageJSRootPreview.js';
+import ImageJSRootPreview from './ImageJSRootPreview.tsx';
 
 
 
