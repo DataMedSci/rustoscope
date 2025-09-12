@@ -6,9 +6,9 @@ type TypedPixels = Uint8Array | Uint16Array | Float32Array;
 type ImagePreviewProps = {
   /** Raw grayscale pixel buffer; one sample per pixel (row-major, X fastest) */
   pixels: TypedPixels | null;
-  /** Image width & height in pixels */
-  width: number | null;
-  height: number | null;
+  /** Image Horizontal Length & Vertical Length in pixels */
+  HorizontalLength: number | null;
+  VerticalLength: number | null;
   header?: string;
   emptyText?: string;
   aspectRatio: number;
@@ -22,8 +22,8 @@ const DRAW_OPTS = 'colz;gridxy;nostat;tickxy';
 
 const ImagePreview = ({
   pixels,
-  width,
-  height,
+  HorizontalLength,
+  VerticalLength,
   header,
   emptyText,
   aspectRatio,
@@ -38,18 +38,18 @@ const ImagePreview = ({
     const host = containerRef.current;
 
     // No target or no data -> clear plot and bail
-    if (!host || !pixels || !width || !height || width <= 0 || height <= 0) {
+    if (!host || !pixels || !HorizontalLength || !VerticalLength || HorizontalLength <= 0 || VerticalLength <= 0) {
       if (host) host.innerHTML = '';
       return;
     }
 
 
     // Keep the layout box stable
-    setAspectRatio(width / height);
+    setAspectRatio(HorizontalLength / VerticalLength);
 
     // Build histogram and draw
-    const w = width;
-    const h = height;
+    const w = HorizontalLength;
+    const h = VerticalLength;
 
     // Clear any previous drawing to avoid stacking
     host.innerHTML = '';
@@ -108,7 +108,7 @@ const ImagePreview = ({
     return () => {
       if (host) host.innerHTML = '';
     };
-  }, [pixels, width, height, header, setAspectRatio, units, mmPerPx]);
+  }, [pixels, HorizontalLength, VerticalLength, header, setAspectRatio,units, mmPerPx]);
 
   const previewStyle = { aspectRatio: aspectRatio.toFixed(5) };
 
@@ -116,7 +116,7 @@ const ImagePreview = ({
     <div className="w-full flex flex-col items-center justify-center p-2">
       {header && <div className="text-xl font-bold p-2">{header}</div>}
 
-      {pixels && width && height ? (
+      {pixels && HorizontalLength && VerticalLength ? (
         <div
           ref={containerRef}
           style={previewStyle}

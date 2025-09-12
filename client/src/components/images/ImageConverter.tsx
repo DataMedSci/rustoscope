@@ -72,8 +72,8 @@ const ImageConverter = () => {
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
   const [rawPixels, setRawPixels] = useState<Uint8Array | null>(null);
-  const [image_width, setImageWidth] = useState<number | null>(null);
-  const [image_height, setImageHeight] = useState<number | null>(null);
+  const [ImageHorizontalLength, setImageWidth] = useState<number | null>(null);
+  const [ImageVerticalLength, setImageHeight] = useState<number | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -126,12 +126,12 @@ const ImageConverter = () => {
       
       // defensive unpacking
       const rawPixels = res?.pixels instanceof Uint8Array ? res.pixels : new Uint8Array(res?.pixels ?? []);
-      const image_width = Number(res?.width ?? null);
-      const image_height = Number(res?.height ?? null);
+      const ImageHorizontalLength = Number(res?.width ?? null);
+      const ImageVerticalLength = Number(res?.height ?? null);
 
       setRawPixels(rawPixels);
-      setImageWidth(image_width);
-      setImageHeight(image_height);
+      setImageWidth(ImageHorizontalLength);
+      setImageHeight(ImageVerticalLength);
 
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
@@ -232,8 +232,8 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
             pixels={rawPixels}
-            width={image_width}
-            height={image_height}
+            HorizontalLength={ImageHorizontalLength}
+            VerticalLength={ImageVerticalLength}
             header="Original Image (JSROOT)"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
@@ -246,8 +246,8 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
             pixels={rawBytes}
-            width={image_width}
-            height={image_height}
+            HorizontalLength={ImageHorizontalLength}
+            VerticalLength={ImageVerticalLength}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
