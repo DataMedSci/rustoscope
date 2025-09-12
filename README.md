@@ -9,7 +9,7 @@ WebAssembly image analysis, using Rust.
 ## 🌐 Live Demo
 
 You can view the latest deployed version here:  
-🔗 [https://jkbstepien.github.io/rustoscope/](https://jkbstepien.github.io/rustoscope/)
+🔗 [https://datamedsci.github.io/rustoscope/](https://datamedsci.github.io/rustoscope/)
 
 ## 📦 Getting Started
 
@@ -57,15 +57,15 @@ rustoscope/
 
 1. Build WebAssembly from Rust source code (inside the `api/` directory):
 
-  ```bash
-    wasm-pack build --target web --out-dir ../client/src/wasm
-  ```
+```bash
+  wasm-pack build --target web --out-dir ../client/src/wasm
+```
 
 2. Start the development server (inside the `client/` directory):
 
-  ```bash
-    pnpm run dev
-  ```
+```bash
+  pnpm run dev
+```
 
 ### 🚢 Deployment (GitHub Pages)
 
