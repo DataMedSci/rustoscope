@@ -9,6 +9,7 @@ import {
   median_blur,
   get_raw_grayscale_pixels,
   get_image_dimensions,
+  get_16bit_grayscale_pixels
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
@@ -50,18 +51,6 @@ const convert = (
   }
 };
 
-const processBytes = (fileType: string, bytes: Uint8Array<ArrayBufferLike>) => {
-  switch (fileType) {
-    case 'image/png':
-    case 'image/jpg':
-    case 'image/jpeg':
-      return bytes;
-    case 'image/tiff':
-      return to_png(bytes);
-    default:
-      throw new Error('Unsupported image type. Supported: [png, jpg, tiff]');
-  }
-};
 
 const ImageConverter = () => {
   const { wasmReady } = useWasm();
@@ -74,6 +63,7 @@ const ImageConverter = () => {
   const [rawPixels, setRawPixels] = useState<Uint8Array | null>(null);
   const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
   const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
+  const [raw16Pixels, setRaw16Pixels] = useState<Uint16Array | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,16 +103,24 @@ const ImageConverter = () => {
       return;
     }
 
+    const allowedTypes = ['image/tiff', 'image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage('Unsupported image type. Supported: [png, jpg, tiff]');
+      return;
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     setErrorMessage(undefined);
 
     try {
-      const processedBytes = processBytes(file.type, bytes);
+      const processedBytes = bytes;
       setRawBytes(processedBytes);
 
-      const rawPixels = get_raw_grayscale_pixels(processedBytes);
       const dimensions = get_image_dimensions(processedBytes);
+
+      const rawPixels = get_raw_grayscale_pixels(processedBytes);
+      const rawPixels16 = get_16bit_grayscale_pixels(processedBytes);
       if (dimensions.length !== 2) {
         throw new Error('Failed to retrieve image dimensions');
       }
@@ -132,6 +130,7 @@ const ImageConverter = () => {
       }
 
       setRawPixels(rawPixels);
+      setRaw16Pixels(rawPixels16);
       setImageHorizontalLength(HorizontalLength);
       setImageVerticalLength(VerticalLength);
 
@@ -233,7 +232,7 @@ const ImageConverter = () => {
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
-            pixels={rawPixels}
+            pixels={raw16Pixels}
             HorizontalLength={ImageHorizontalLength}
             VerticalLength={ImageVerticalLength}
             header="Original Image (JSROOT)"
