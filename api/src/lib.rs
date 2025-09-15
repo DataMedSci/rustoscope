@@ -3,6 +3,9 @@ use imageproc::filter::median_filter;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
+pub mod image_handler;
+use crate::image_handler::*;
+
 // Functions used in the client code
 
 #[wasm_bindgen]

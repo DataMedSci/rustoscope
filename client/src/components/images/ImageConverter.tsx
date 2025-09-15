@@ -3,13 +3,13 @@ import { useWasm } from '@/hooks/useWasm';
 import {
   to_grayscale,
   invert_colors,
-  to_png,
   clip_pixels_with_percentiles,
   gaussian_blur,
   median_blur,
   get_raw_grayscale_pixels,
   get_image_dimensions,
-  get_16bit_grayscale_pixels
+  get_16bit_grayscale_pixels,
+  load_image
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/models/algorithms';
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
+import { match } from 'assert';
 
 
 
@@ -60,10 +61,10 @@ const ImageConverter = () => {
   const [imgResult, setImgResult] = useState<string | null>(null);
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
-  const [rawPixels, setRawPixels] = useState<Uint8Array | null>(null);
+  const [rawPixels, setRawPixels] = useState<Uint8Array | Uint16Array | null>(null);
   const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
   const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
-  const [raw16Pixels, setRaw16Pixels] = useState<Uint16Array | null>(null);
+
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -114,40 +115,32 @@ const ImageConverter = () => {
     setErrorMessage(undefined);
 
     try {
-      const processedBytes = bytes;
-      setRawBytes(processedBytes);
+      setRawBytes(bytes);
 
-      const dimensions = get_image_dimensions(processedBytes);
+      const img = load_image(bytes);
 
-      const rawPixels = get_raw_grayscale_pixels(processedBytes);
-      const rawPixels16 = get_16bit_grayscale_pixels(processedBytes);
-      if (dimensions.length !== 2) {
-        throw new Error('Failed to retrieve image dimensions');
+      setImageHorizontalLength(img.horizontal_length);
+      setImageVerticalLength(img.vertical_length);
+
+      if (img.bits_per_sample === 16) {
+        const pixels16 = img.pixels_u16();
+        if (pixels16) {
+          setRawPixels(pixels16);
+        }
+      } else if (img.bits_per_sample === 8) {
+        const pixels8 = img.pixels_u8();
+        if (pixels8) {
+          setRawPixels(pixels8);
+        }
+      } else {
+        setRawPixels(null);
+        setErrorMessage(`Unsupported bits per sample: ${img.bits_per_sample}`);
       }
-      const [HorizontalLength, VerticalLength] = dimensions;
-      if (HorizontalLength <= 0 || VerticalLength <= 0) {
-        throw new Error('Invalid image dimensions');
-      }
-
-      setRawPixels(rawPixels);
-      setRaw16Pixels(rawPixels16);
-      setImageHorizontalLength(HorizontalLength);
-      setImageVerticalLength(VerticalLength);
 
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
       }
 
-      const blob = new Blob([processedBytes]);
-      const newUrl = URL.createObjectURL(blob);
-      prevSrcUrlRef.current = newUrl;
-      setImgSrc(newUrl);
-
-      if (prevResultUrlRef.current) {
-        URL.revokeObjectURL(prevResultUrlRef.current);
-        prevResultUrlRef.current = null;
-        setImgResult(null);
-      }
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
       setImgSrc(null);
@@ -232,7 +225,7 @@ const ImageConverter = () => {
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
-            pixels={raw16Pixels}
+            pixels={rawPixels}
             HorizontalLength={ImageHorizontalLength}
             VerticalLength={ImageVerticalLength}
             header="Original Image (JSROOT)"
