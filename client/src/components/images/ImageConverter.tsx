@@ -3,12 +3,13 @@ import { useWasm } from '@/hooks/useWasm';
 import {
   to_grayscale,
   invert_colors,
-  to_png,
   clip_pixels_with_percentiles,
   gaussian_blur,
   median_blur,
   get_raw_grayscale_pixels,
   get_image_dimensions,
+  get_16bit_grayscale_pixels,
+  load_image
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
@@ -50,18 +51,6 @@ const convert = (
   }
 };
 
-const processBytes = (fileType: string, bytes: Uint8Array<ArrayBufferLike>) => {
-  switch (fileType) {
-    case 'image/png':
-    case 'image/jpg':
-    case 'image/jpeg':
-      return bytes;
-    case 'image/tiff':
-      return to_png(bytes);
-    default:
-      throw new Error('Unsupported image type. Supported: [png, jpg, tiff]');
-  }
-};
 
 const ImageConverter = () => {
   const { wasmReady } = useWasm();
@@ -71,9 +60,10 @@ const ImageConverter = () => {
   const [imgResult, setImgResult] = useState<string | null>(null);
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
-  const [rawPixels, setRawPixels] = useState<Uint8Array | null>(null);
+  const [rawPixels, setRawPixels] = useState<Uint8Array | Uint16Array | null>(null);
   const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
   const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
+
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,42 +103,46 @@ const ImageConverter = () => {
       return;
     }
 
+    const allowedTypes = ['image/tiff', 'image/png', 'image/jpg', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage('Unsupported image type. Supported: [png, jpg, tiff]');
+      return;
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     setErrorMessage(undefined);
 
     try {
-      const processedBytes = processBytes(file.type, bytes);
-      setRawBytes(processedBytes);
+      setRawBytes(bytes);
 
-      const rawPixels = get_raw_grayscale_pixels(processedBytes);
-      const dimensions = get_image_dimensions(processedBytes);
-      if (dimensions.length !== 2) {
-        throw new Error('Failed to retrieve image dimensions');
-      }
-      const [HorizontalLength, VerticalLength] = dimensions;
-      if (HorizontalLength <= 0 || VerticalLength <= 0) {
-        throw new Error('Invalid image dimensions');
-      }
+      const img = load_image(bytes);
 
-      setRawPixels(rawPixels);
-      setImageHorizontalLength(HorizontalLength);
-      setImageVerticalLength(VerticalLength);
+      setImageHorizontalLength(img.horizontal_length);
+      setImageVerticalLength(img.vertical_length);
+
+      if (img.bits_per_sample === 16) {
+        const pixels16 = img.pixels_u16();
+        if (pixels16) {
+          setRawPixels(pixels16);
+        }
+      } else if (img.bits_per_sample === 8) {
+        const pixels8 = img.pixels_u8();
+        if (pixels8) {
+          setRawPixels(pixels8);
+        }
+      } else {
+        setRawPixels(null);
+        setErrorMessage(`Unsupported bits per sample: ${img.bits_per_sample}`);
+      }
 
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
       }
+      const newSrcUrl = URL.createObjectURL(file);
+      prevSrcUrlRef.current = newSrcUrl;
+      setImgSrc(newSrcUrl);
 
-      const blob = new Blob([processedBytes]);
-      const newUrl = URL.createObjectURL(blob);
-      prevSrcUrlRef.current = newUrl;
-      setImgSrc(newUrl);
-
-      if (prevResultUrlRef.current) {
-        URL.revokeObjectURL(prevResultUrlRef.current);
-        prevResultUrlRef.current = null;
-        setImgResult(null);
-      }
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
       setImgSrc(null);

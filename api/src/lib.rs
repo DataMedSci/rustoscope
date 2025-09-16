@@ -3,7 +3,37 @@ use imageproc::filter::median_filter;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
+pub mod image_handler;
+use crate::image_handler::*;
+
 // Functions used in the client code
+
+#[wasm_bindgen]
+pub struct ImageInfo {
+    horizontal_length: u32,
+    vertical_length: u32,
+    channels: u8,
+    bits_per_sample: u16,
+}
+
+#[wasm_bindgen]
+pub fn get_image_info(image_bytes: &[u8]) -> Result<ImageInfo, JsValue> {
+    let img = image::load_from_memory(image_bytes)
+        .map_err(|e| JsValue::from_str(&format!("Failed to load image: {}", e)))?;
+
+    let (horizontal_length, vertical_length) = img.dimensions();
+    let color = img.color();
+
+    let channels = color.channel_count();
+    let bits_per_sample = color.bits_per_pixel() / channels as u16;
+
+    Ok(ImageInfo {
+        horizontal_length,
+        vertical_length,
+        channels,
+        bits_per_sample,
+    })
+}
 
 #[wasm_bindgen]
 pub fn get_raw_grayscale_pixels(image_bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
@@ -13,10 +43,17 @@ pub fn get_raw_grayscale_pixels(image_bytes: &[u8]) -> Result<Vec<u8>, JsValue> 
 }
 
 #[wasm_bindgen]
+pub fn get_16bit_grayscale_pixels(image_bytes: &[u8]) -> Result<Vec<u16>, JsValue> {
+    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
+    let gray16 = img.to_luma16();
+    Ok(gray16.into_raw())
+}
+
+#[wasm_bindgen]
 pub fn get_image_dimensions(image_bytes: &[u8]) -> Result<Vec<u32>, JsValue> {
     let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
-    let (width, height) = img.dimensions();
-    Ok(vec![width, height])
+    let (horizontal_length, vertical_length) = img.dimensions();
+    Ok(vec![horizontal_length, vertical_length])
 }
 
 #[wasm_bindgen]
@@ -66,12 +103,12 @@ pub fn clip_pixels_with_percentiles(
         .map_err(|e| JsValue::from_str(&format!("Image decode error: {}", e)))?;
 
     let rgb8: image::RgbImage = img.to_rgb8();
-    let (width, height) = rgb8.dimensions();
+    let (horizontal_length, vertical_length) = rgb8.dimensions();
     let mut pixels: Vec<u8> = rgb8.into_raw();
 
     if low_percentile.is_none() && high_percentile.is_none() {
         let buf: ImageBuffer<Rgb<u8>, Vec<u8>> =
-            ImageBuffer::from_raw(width, height, pixels.clone())
+            ImageBuffer::from_raw(horizontal_length, vertical_length, pixels.clone())
                 .ok_or_else(|| JsValue::from_str("Buffer length mismatch"))?;
         let dyn_img = DynamicImage::ImageRgb8(buf);
         let mut out = Cursor::new(Vec::new());
@@ -99,8 +136,9 @@ pub fn clip_pixels_with_percentiles(
         }
     });
 
-    let clip_buf: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::from_raw(width, height, pixels)
-        .ok_or_else(|| JsValue::from_str("Buffer length mismatch after clipping"))?;
+    let clip_buf: ImageBuffer<Rgb<u8>, Vec<u8>> =
+        ImageBuffer::from_raw(horizontal_length, vertical_length, pixels)
+            .ok_or_else(|| JsValue::from_str("Buffer length mismatch after clipping"))?;
     let dyn_img = DynamicImage::ImageRgb8(clip_buf);
 
     let mut output = Cursor::new(Vec::new());
