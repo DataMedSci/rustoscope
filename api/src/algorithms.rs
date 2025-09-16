@@ -1,6 +1,5 @@
 use image::{DynamicImage, ImageBuffer, Luma, Rgb};
-use imageproc::filter::median_filter;
-use std::io::Cursor;
+// use imageproc::filter::median_filter;
 use wasm_bindgen::prelude::*;
 
 use crate::image_handler::{Image, Pixels};
@@ -62,44 +61,44 @@ pub fn gaussian_blur_image(img: &mut Image, sigma: f32) -> Result<(), JsValue> {
     Ok(())
 }
 
-#[wasm_bindgen]
-pub fn median_blur_image(img: &mut Image, kernel_radius: u32) -> Result<(), JsValue> {
-    if kernel_radius == 0 {
-        return Err(JsValue::from_str("Kernel radius must be positive"));
-    }
+// #[wasm_bindgen]
+// pub fn median_blur_image(img: &mut Image, kernel_radius: u32) -> Result<(), JsValue> {
+//     if kernel_radius == 0 {
+//         return Err(JsValue::from_str("Kernel radius must be positive"));
+//     }
 
-    match &mut img.pixels {
-        Pixels::U8(data) => match img.color_type.as_str() {
-            "Rgb8" => {
-                let buffer: ImageBuffer<Rgb<u8>, _> =
-                    ImageBuffer::from_raw(img.horizontal_length, img.vertical_length, data.clone())
-                        .ok_or_else(|| JsValue::from_str("Failed to build Rgb8 buffer"))?;
+//     match &mut img.pixels {
+//         Pixels::U8(data) => match img.color_type.as_str() {
+//             "Rgb8" => {
+//                 let buffer: ImageBuffer<Rgb<u8>, _> =
+//                     ImageBuffer::from_raw(img.horizontal_length, img.vertical_length, data.clone())
+//                         .ok_or_else(|| JsValue::from_str("Failed to build Rgb8 buffer"))?;
 
-                let filtered = median_filter(&buffer, kernel_radius, kernel_radius);
-                *data = filtered.into_raw(); // overwrite original pixels
-            }
-            "Luma8" => {
-                let buffer: ImageBuffer<Luma<u8>, _> =
-                    ImageBuffer::from_raw(img.horizontal_length, img.vertical_length, data.clone())
-                        .ok_or_else(|| JsValue::from_str("Failed to build Luma8 buffer"))?;
+//                 let filtered = median_filter(&buffer, kernel_radius, kernel_radius);
+//                 *data = filtered.into_raw(); // overwrite original pixels
+//             }
+//             "Luma8" => {
+//                 let buffer: ImageBuffer<Luma<u8>, _> =
+//                     ImageBuffer::from_raw(img.horizontal_length, img.vertical_length, data.clone())
+//                         .ok_or_else(|| JsValue::from_str("Failed to build Luma8 buffer"))?;
 
-                let filtered = median_filter(&buffer, kernel_radius, kernel_radius);
-                *data = filtered.into_raw();
-            }
-            _ => return Err(JsValue::from_str("Unsupported 8-bit color type")),
-        },
-        Pixels::U16(data) => match img.color_type.as_str() {
-            "Luma16" => {
-                let buffer: ImageBuffer<Luma<u16>, _> =
-                    ImageBuffer::from_raw(img.horizontal_length, img.vertical_length, data.clone())
-                        .ok_or_else(|| JsValue::from_str("Failed to build Luma16 buffer"))?;
+//                 let filtered = median_filter(&buffer, kernel_radius, kernel_radius);
+//                 *data = filtered.into_raw();
+//             }
+//             _ => return Err(JsValue::from_str("Unsupported 8-bit color type")),
+//         },
+//         Pixels::U16(data) => match img.color_type.as_str() {
+//             "Luma16" => {
+//                 let buffer: ImageBuffer<Luma<u16>, _> =
+//                     ImageBuffer::from_raw(img.horizontal_length, img.vertical_length, data.clone())
+//                         .ok_or_else(|| JsValue::from_str("Failed to build Luma16 buffer"))?;
 
-                let filtered = median_filter(&buffer, kernel_radius, kernel_radius);
-                *data = filtered.into_raw();
-            }
-            _ => return Err(JsValue::from_str("Unsupported 16-bit color type")),
-        },
-    };
+//                 let filtered = median_filter(&buffer, kernel_radius, kernel_radius);
+//                 *data = filtered.into_raw();
+//             }
+//             _ => return Err(JsValue::from_str("Unsupported 16-bit color type")),
+//         },
+//     };
 
-    Ok(())
-}
+//     Ok(())
+// }

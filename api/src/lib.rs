@@ -1,21 +1,12 @@
-use image::{DynamicImage, GenericImageView, ImageBuffer, ImageError, ImageOutputFormat, Rgb};
+use image::{DynamicImage, ImageBuffer, ImageError, ImageOutputFormat, Rgb};
 use imageproc::filter::median_filter;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
 pub mod algorithms;
 pub mod image_handler;
-use crate::image_handler::*;
 
 // Functions used in the client code
-
-#[wasm_bindgen]
-pub struct ImageInfo {
-    horizontal_length: u32,
-    vertical_length: u32,
-    channels: u8,
-    bits_per_sample: u16,
-}
 
 #[wasm_bindgen]
 pub fn to_grayscale(image: &[u8]) -> Result<Vec<u8>, JsValue> {

@@ -6,7 +6,9 @@ import {
   clip_pixels_with_percentiles,
   gaussian_blur,
   median_blur,
-  load_image
+  load_image,
+  gaussian_blur_image,
+  Image
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
@@ -18,48 +20,20 @@ import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
 
 
-
-const convert = (
-  bytesToProcess: Uint8Array<ArrayBufferLike>,
-  algorithm: ConversionAlgorithm,
-  setErrorMessage: (msg: string) => void
-): Uint8Array<ArrayBufferLike> | undefined => {
-  switch (algorithm.type) {
-    case ConversionAlgorithmType.Grayscale:
-      return to_grayscale(bytesToProcess);
-    case ConversionAlgorithmType.Invert:
-      return invert_colors(bytesToProcess);
-    case ConversionAlgorithmType.HotPixelRemoval:
-      return clip_pixels_with_percentiles(
-        bytesToProcess,
-        algorithm.lowPercentile,
-        algorithm.highPercentile
-      );
-    case ConversionAlgorithmType.GaussianBlur:
-      return gaussian_blur(bytesToProcess, algorithm.sigma);
-    case ConversionAlgorithmType.MedianBlur:
-      return median_blur(bytesToProcess, algorithm.kernelRadius);
-    default:
-      // fallback for unsupported algorithms
-      // This should ideally never happen if the algorithm list is properly managed
-      // That is why we use `as any` to avoid TypeScript errors
-      setErrorMessage(`Unsupported algorithm: ${(algorithm as any).type}`);
-      return;
-  }
-};
-
-
 const ImageConverter = () => {
   const { wasmReady } = useWasm();
   const [algorithms, setAlgorithms] = useState<ConversionAlgorithm[]>([]);
 
-  const [imgResult, setImgResult] = useState<string | null>(null);
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
+
+  const [uploadedImage, setImgToProcess] = useState<Image | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
   const [rawPixels, setRawPixels] = useState<Uint8Array | Uint16Array | null>(null);
   const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
   const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
 
+  const [imageToConvert, setImageToConvert] = useState<Image | null>(null);
+  const [convertedPixels, setConvertedPixels] = useState<Uint8Array | Uint16Array | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,7 +87,10 @@ const ImageConverter = () => {
       setRawBytes(bytes);
 
       const img = load_image(bytes);
+      const imgToConvert = load_image(bytes);
 
+      setImgToProcess(img);
+      setImageToConvert(imgToConvert);
       setImageHorizontalLength(img.horizontal_length);
       setImageVerticalLength(img.vertical_length);
 
@@ -149,40 +126,38 @@ const ImageConverter = () => {
       setErrorMessage('No algorithms selected');
       return;
     }
-    
+
+    const imageToConvert = load_image(rawBytes);
+    setImageToConvert(imageToConvert);
+
     setErrorMessage(undefined);
     setIsProcessing(true);
     setProcessingProgress(0);
     setCurrentAlgorithm('');
 
     try {
-      let processedBytes: Uint8Array<ArrayBufferLike> | undefined =
-        Uint8Array.from(rawBytes);
-      
       for (let i = 0; i < enabledAlgorithms.length; i++) {
         const algorithm = enabledAlgorithms[i];
         
         setCurrentAlgorithm(getAlgorithmName(algorithm.type));
         setProcessingProgress(Math.round((i / enabledAlgorithms.length) * 100));
-              
-        processedBytes = convert(processedBytes, algorithm, setErrorMessage);
-        if (!processedBytes) {
-          console.error(`Conversion failed for algorithm: ${algorithm.type}`);
+        
+        try {
+          convert(imageToConvert, algorithm, setErrorMessage);
+        } catch (error) {
+          console.error(`Error occurred while processing algorithm ${algorithm.type}:`, error);
           return;
-        }
-        
-        if (prevResultUrlRef.current) {
-          URL.revokeObjectURL(prevResultUrlRef.current);
-        }
-        
-        const intermediateBlob = new Blob([processedBytes], { type: 'image/png' });
-        const newUrl = URL.createObjectURL(intermediateBlob);
-        prevResultUrlRef.current = newUrl;
-        setImgResult(newUrl);
-        
+        }   
         await new Promise(resolve => setTimeout(resolve, YIELD_DELAY_MS));
       }
 
+      if (imageToConvert.bits_per_sample === 16) {
+        const pixels16 = imageToConvert.pixels_u16();
+        setConvertedPixels(pixels16 ? pixels16 : null);
+      } else if (imageToConvert.bits_per_sample === 8) {
+        const pixels8 = imageToConvert.pixels_u8();
+        setConvertedPixels(pixels8 ? pixels8 : null);
+      }
       setProcessingProgress(100);
       setCurrentAlgorithm('Complete');
       
@@ -190,10 +165,6 @@ const ImageConverter = () => {
         URL.revokeObjectURL(prevResultUrlRef.current);
       }
       
-      const finalBlob = new Blob([processedBytes], { type: 'image/png' });
-      const finalUrl = URL.createObjectURL(finalBlob);
-      prevResultUrlRef.current = finalUrl;
-      setImgResult(finalUrl);
       setErrorMessage(undefined);
       
       await new Promise(resolve => setTimeout(resolve, FINAL_DISPLAY_DELAY_MS));
@@ -207,6 +178,44 @@ const ImageConverter = () => {
       setIsProcessing(false);
       setProcessingProgress(0);
       setCurrentAlgorithm('');
+    }
+  };
+
+    const convert = (
+    image: Image,
+    algorithm: ConversionAlgorithm,
+    setErrorMessage: (msg: string) => void
+  ): Uint8Array<ArrayBufferLike> | undefined => {
+    switch (algorithm.type) {
+      // case ConversionAlgorithmType.Grayscale:
+      //   return to_grayscale(bytesToProcess);
+      // case ConversionAlgorithmType.Invert:
+      //   return invert_colors(bytesToProcess);
+      // case ConversionAlgorithmType.HotPixelRemoval:
+      //   return clip_pixels_with_percentiles(
+      //     bytesToProcess,
+      //     algorithm.lowPercentile,
+      //     algorithm.highPercentile
+      //   );
+      // case ConversionAlgorithmType.GaussianBlur:
+      //   return gaussian_blur(bytesToProcess, algorithm.sigma);
+      // case ConversionAlgorithmType.MedianBlur:
+      //   return median_blur(bytesToProcess, algorithm.kernelRadius);
+      case ConversionAlgorithmType.GaussianBlur:
+        try {
+          const resultImage = gaussian_blur_image(image, algorithm.sigma);
+          setImageToConvert(resultImage);
+          return;
+        } catch (err) {
+          setErrorMessage(`Conversion error: ${err}`);
+          return;
+        }
+      default:
+        // fallback for unsupported algorithms
+        // This should ideally never happen if the algorithm list is properly managed
+        // That is why we use `as any` to avoid TypeScript errors
+        setErrorMessage(`Unsupported algorithm: ${(algorithm as any).type}`);
+        return;
     }
   };
 
@@ -233,9 +242,9 @@ const ImageConverter = () => {
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
-            pixels={rawBytes}
-            HorizontalLength={ImageHorizontalLength}
-            VerticalLength={ImageVerticalLength}
+            pixels={convertedPixels}
+            HorizontalLength={imageToConvert ? imageToConvert.horizontal_length : null}
+            VerticalLength={imageToConvert ? imageToConvert.vertical_length : null}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
