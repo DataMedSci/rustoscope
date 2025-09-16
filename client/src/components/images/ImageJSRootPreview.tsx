@@ -61,7 +61,7 @@ const ImagePreview = ({
     hist.fYaxis.fXmin = 0; hist.fYaxis.fXmax = h * scale;
     hist.fXaxis.fTitle = units === 'mm' ? 'X [mm]' : 'X [px]';
     hist.fYaxis.fTitle = units === 'mm' ? 'Y [mm]' : 'Y [px]';
-    hist.fTitle = header ?? 'Image';
+    hist.fTitle = '';
 
     // Center axis titles + offset (same trick as in JsRootGraph2D)
     hist.fXaxis.InvertBit(BIT(12));

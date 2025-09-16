@@ -6,9 +6,6 @@ import {
   clip_pixels_with_percentiles,
   gaussian_blur,
   median_blur,
-  get_raw_grayscale_pixels,
-  get_image_dimensions,
-  get_16bit_grayscale_pixels,
   load_image
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
@@ -56,7 +53,6 @@ const ImageConverter = () => {
   const { wasmReady } = useWasm();
   const [algorithms, setAlgorithms] = useState<ConversionAlgorithm[]>([]);
 
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [imgResult, setImgResult] = useState<string | null>(null);
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
@@ -139,13 +135,9 @@ const ImageConverter = () => {
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
       }
-      const newSrcUrl = URL.createObjectURL(file);
-      prevSrcUrlRef.current = newSrcUrl;
-      setImgSrc(newSrcUrl);
 
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
-      setImgSrc(null);
       setRawBytes(null);
     }
   };
@@ -230,7 +222,7 @@ const ImageConverter = () => {
             pixels={rawPixels}
             HorizontalLength={ImageHorizontalLength}
             VerticalLength={ImageVerticalLength}
-            header="Original Image (JSROOT)"
+            header="Original Image"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
             error={errorMessage}

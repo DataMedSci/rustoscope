@@ -3,6 +3,7 @@ use imageproc::filter::median_filter;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
+pub mod algorithms;
 pub mod image_handler;
 use crate::image_handler::*;
 
@@ -17,46 +18,6 @@ pub struct ImageInfo {
 }
 
 #[wasm_bindgen]
-pub fn get_image_info(image_bytes: &[u8]) -> Result<ImageInfo, JsValue> {
-    let img = image::load_from_memory(image_bytes)
-        .map_err(|e| JsValue::from_str(&format!("Failed to load image: {}", e)))?;
-
-    let (horizontal_length, vertical_length) = img.dimensions();
-    let color = img.color();
-
-    let channels = color.channel_count();
-    let bits_per_sample = color.bits_per_pixel() / channels as u16;
-
-    Ok(ImageInfo {
-        horizontal_length,
-        vertical_length,
-        channels,
-        bits_per_sample,
-    })
-}
-
-#[wasm_bindgen]
-pub fn get_raw_grayscale_pixels(image_bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
-    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
-    let gray = img.to_luma8();
-    Ok(gray.into_raw())
-}
-
-#[wasm_bindgen]
-pub fn get_16bit_grayscale_pixels(image_bytes: &[u8]) -> Result<Vec<u16>, JsValue> {
-    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
-    let gray16 = img.to_luma16();
-    Ok(gray16.into_raw())
-}
-
-#[wasm_bindgen]
-pub fn get_image_dimensions(image_bytes: &[u8]) -> Result<Vec<u32>, JsValue> {
-    let img = image::load_from_memory(image_bytes).map_err(generate_error_message)?;
-    let (horizontal_length, vertical_length) = img.dimensions();
-    Ok(vec![horizontal_length, vertical_length])
-}
-
-#[wasm_bindgen]
 pub fn to_grayscale(image: &[u8]) -> Result<Vec<u8>, JsValue> {
     read_and_encode(image, |img| img.grayscale())
 }
@@ -67,11 +28,6 @@ pub fn invert_colors(image: &[u8]) -> Result<Vec<u8>, JsValue> {
         img.invert();
         img
     })
-}
-
-#[wasm_bindgen]
-pub fn to_png(image: &[u8]) -> Result<Vec<u8>, JsValue> {
-    read_and_encode(image, |img| img)
 }
 
 #[wasm_bindgen]

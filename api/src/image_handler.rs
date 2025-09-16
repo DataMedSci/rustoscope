@@ -3,16 +3,16 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct Image {
-    horizontal_length: u32,
-    vertical_length: u32,
-    channels: u8,
-    bits_per_sample: u16,
-    color_type: String,
-    pixels: Pixels, // internal only
+    pub(crate) horizontal_length: u32,
+    pub(crate) vertical_length: u32,
+    pub(crate) channels: u8,
+    pub(crate) bits_per_sample: u16,
+    pub(crate) color_type: String,
+    pub(crate) pixels: Pixels, // internal only
 }
 
 /// Internal pixel storage (not exposed directly to JS)
-enum Pixels {
+pub enum Pixels {
     U8(Vec<u8>),
     U16(Vec<u16>),
 }
@@ -67,7 +67,7 @@ impl Image {
 }
 
 impl Image {
-    fn new_u8(
+    pub(crate) fn new_u8(
         horizontal_length: u32,
         vertical_length: u32,
         channels: u8,
@@ -85,7 +85,7 @@ impl Image {
         }
     }
 
-    fn new_u16(
+    pub(crate) fn new_u16(
         horizontal_length: u32,
         vertical_length: u32,
         channels: u8,
