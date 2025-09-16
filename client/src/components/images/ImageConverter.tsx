@@ -19,7 +19,6 @@ import {
 } from '@/models/algorithms';
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
-import { match } from 'assert';
 
 
 
@@ -140,6 +139,9 @@ const ImageConverter = () => {
       if (prevSrcUrlRef.current) {
         URL.revokeObjectURL(prevSrcUrlRef.current);
       }
+      const newSrcUrl = URL.createObjectURL(file);
+      prevSrcUrlRef.current = newSrcUrl;
+      setImgSrc(newSrcUrl);
 
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
