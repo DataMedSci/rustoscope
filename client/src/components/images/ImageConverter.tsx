@@ -19,26 +19,34 @@ import {
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
 
+type ImageState = {
+  rawBytes: Uint8Array | null;
+  uploadedImage: Image | null;
+  rawPixels: Uint8Array | Uint16Array | null;
+  imageToConvert: Image | null;
+  convertedPixels: Uint8Array | Uint16Array | null;
+};
+
 
 const ImageConverter = () => {
   const { wasmReady } = useWasm();
   const [algorithms, setAlgorithms] = useState<ConversionAlgorithm[]>([]);
 
-  const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
-
-  const [uploadedImage, setUploadedImage] = useState<Image | null>(null);
-  const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
-  const [rawPixels, setRawPixels] = useState<Uint8Array | Uint16Array | null>(null);
-
-  const [imageToConvert, setImageToConvert] = useState<Image | null>(null);
-  const [convertedPixels, setConvertedPixels] = useState<Uint8Array | Uint16Array | null>(null);
+  const [imageState, setImageState] = useState<ImageState>({
+    rawBytes: null,
+    uploadedImage: null,
+    rawPixels: null,
+    imageToConvert: null,
+    convertedPixels: null,
+  });
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [currentAlgorithm, setCurrentAlgorithm] = useState<string>('');
   const [units, setUnits] = useState<'px' | 'mm'>('px');
-  const [mmPerPx, setMmPerPx] = useState<number>(0.14);
+  const [mmPerPx, setMmPerPx] = useState(16 / 10);
+  const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
   
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -82,47 +90,40 @@ const ImageConverter = () => {
     setErrorMessage(undefined);
 
     try {
-      setRawBytes(bytes);
-
       const img = load_image(bytes);
-
-      setUploadedImage(img);
-
-      if (img.bits_per_sample === 16) {
-        const pixels16 = img.pixels_u16();
-        if (pixels16) {
-          setRawPixels(pixels16);
-        }
-      } else if (img.bits_per_sample === 8) {
-        const pixels8 = img.pixels_u8();
-        if (pixels8) {
-          setRawPixels(pixels8);
-        }
-      } else {
-        setRawPixels(null);
-        setErrorMessage(`Unsupported bits per sample: ${img.bits_per_sample}`);
+      const pixels = img.bits_per_sample === 16 ? img.pixels_u16() : 
+        img.bits_per_sample === 8 ? img.pixels_u8() : null;
+      if (!pixels) {
+        setErrorMessage('Failed to extract pixel data from image');
+        return;
       }
 
-      if (prevSrcUrlRef.current) {
-        URL.revokeObjectURL(prevSrcUrlRef.current);
-      }
+      setImageState({
+        rawBytes: bytes,
+        uploadedImage: img,
+        rawPixels: pixels,
+        imageToConvert: img,
+        convertedPixels: null,
+      });
 
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
-      setRawBytes(null);
     }
   };
 
   const handleRun = async () => {
     const enabledAlgorithms = algorithms.filter((a) => a.enabled);
-    if (!rawBytes || !wasmReady) return;
+    if (!imageState.rawBytes || !wasmReady) return;
     if (enabledAlgorithms.length === 0) {
       setErrorMessage('No algorithms selected');
       return;
     }
-    if (!imageToConvert) {
-      const imageToConvert = load_image(rawBytes);
-      setImageToConvert(imageToConvert);
+    if (!imageState.imageToConvert) {
+      const imageToConvert = load_image(imageState.rawBytes);
+      setImageState((prevState) => ({
+        ...prevState,
+        imageToConvert,
+      }));
       return;
     }
 
@@ -139,7 +140,7 @@ const ImageConverter = () => {
         setProcessingProgress(Math.round((i / enabledAlgorithms.length) * 100));
         
         try {
-          convert(imageToConvert, algorithm, setErrorMessage);
+          convert(imageState.imageToConvert, algorithm, setErrorMessage);
         } catch (error) {
           console.error(`Error occurred while processing algorithm ${algorithm.type}:`, error);
           return;
@@ -147,13 +148,22 @@ const ImageConverter = () => {
         await new Promise(resolve => setTimeout(resolve, YIELD_DELAY_MS));
       }
 
-      if (imageToConvert.bits_per_sample === 16) {
-        const pixels16 = imageToConvert.pixels_u16();
-        setConvertedPixels(pixels16 ? pixels16 : null);
-      } else if (imageToConvert.bits_per_sample === 8) {
-        const pixels8 = imageToConvert.pixels_u8();
-        setConvertedPixels(pixels8 ? pixels8 : null);
+       const finalImage = imageState.imageToConvert;
+    let converted: Uint8Array | Uint16Array | null = null;
+    if (finalImage) {
+      if (finalImage.bits_per_sample === 16) {
+        converted = finalImage.pixels_u16() ?? null;
+      } else if (finalImage.bits_per_sample === 8) {
+        converted = finalImage.pixels_u8() ?? null;
       }
+    }
+
+    setImageState(prev => ({
+      ...prev,
+      convertedPixels: converted,
+    }));
+
+
       setProcessingProgress(100);
       setCurrentAlgorithm('Complete');
       
@@ -223,9 +233,9 @@ const ImageConverter = () => {
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
-            pixels={rawPixels}
-            HorizontalLength={uploadedImage ? uploadedImage.horizontal_length : null}
-            VerticalLength={uploadedImage ? uploadedImage.vertical_length : null}
+            pixels={imageState.rawPixels}
+            HorizontalLength={imageState.uploadedImage ? imageState.uploadedImage.horizontal_length : null}
+            VerticalLength={imageState.uploadedImage ? imageState.uploadedImage.vertical_length : null}
             header="Original Image"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
@@ -237,9 +247,9 @@ const ImageConverter = () => {
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
-            pixels={convertedPixels}
-            HorizontalLength={imageToConvert ? imageToConvert.horizontal_length : null}
-            VerticalLength={imageToConvert ? imageToConvert.vertical_length : null}
+            pixels={imageState.convertedPixels}
+            HorizontalLength={imageState.imageToConvert ? imageState.imageToConvert.horizontal_length : null}
+            VerticalLength={imageState.imageToConvert ? imageState.imageToConvert.vertical_length : null}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
