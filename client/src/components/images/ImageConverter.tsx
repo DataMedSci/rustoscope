@@ -26,11 +26,9 @@ const ImageConverter = () => {
 
   const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
 
-  const [uploadedImage, setImgToProcess] = useState<Image | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<Image | null>(null);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
   const [rawPixels, setRawPixels] = useState<Uint8Array | Uint16Array | null>(null);
-  const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
-  const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
 
   const [imageToConvert, setImageToConvert] = useState<Image | null>(null);
   const [convertedPixels, setConvertedPixels] = useState<Uint8Array | Uint16Array | null>(null);
@@ -87,12 +85,8 @@ const ImageConverter = () => {
       setRawBytes(bytes);
 
       const img = load_image(bytes);
-      const imgToConvert = load_image(bytes);
 
-      setImgToProcess(img);
-      setImageToConvert(imgToConvert);
-      setImageHorizontalLength(img.horizontal_length);
-      setImageVerticalLength(img.vertical_length);
+      setUploadedImage(img);
 
       if (img.bits_per_sample === 16) {
         const pixels16 = img.pixels_u16();
@@ -126,9 +120,11 @@ const ImageConverter = () => {
       setErrorMessage('No algorithms selected');
       return;
     }
-
-    const imageToConvert = load_image(rawBytes);
-    setImageToConvert(imageToConvert);
+    if (!imageToConvert) {
+      const imageToConvert = load_image(rawBytes);
+      setImageToConvert(imageToConvert);
+      return;
+    }
 
     setErrorMessage(undefined);
     setIsProcessing(true);
@@ -203,8 +199,7 @@ const ImageConverter = () => {
       //   return median_blur(bytesToProcess, algorithm.kernelRadius);
       case ConversionAlgorithmType.GaussianBlur:
         try {
-          const resultImage = gaussian_blur_image(image, algorithm.sigma);
-          setImageToConvert(resultImage);
+          gaussian_blur_image(image, algorithm.sigma);
           return;
         } catch (err) {
           setErrorMessage(`Conversion error: ${err}`);
@@ -229,8 +224,8 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
             pixels={rawPixels}
-            HorizontalLength={ImageHorizontalLength}
-            VerticalLength={ImageVerticalLength}
+            HorizontalLength={uploadedImage ? uploadedImage.horizontal_length : null}
+            VerticalLength={uploadedImage ? uploadedImage.vertical_length : null}
             header="Original Image"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
