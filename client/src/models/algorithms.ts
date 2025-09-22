@@ -4,6 +4,7 @@ export enum ConversionAlgorithmType {
   HotPixelRemoval = 'hot_pixel_removal',
   GaussianBlur = 'gaussian_blur',
   MedianBlur = 'median_blur',
+  LinearTransform = 'linear_transform',
 }
 
 export type Grayscale = { type: ConversionAlgorithmType.Grayscale };
@@ -22,12 +23,19 @@ export type MedianBlur = {
   kernelRadius: number;
 };
 
+export type LinearTransform = {
+  type: ConversionAlgorithmType.LinearTransform;
+  a: number; // slope
+  b: number; // intercept
+};
+
 export type ConversionAlgorithm = (
   | Grayscale
   | Invert
   | HotPixelRemoval
   | GaussianBlur
   | MedianBlur
+  | LinearTransform
 ) & {
   enabled: boolean;
 };
@@ -44,6 +52,8 @@ export const getAlgorithmName = (type: ConversionAlgorithmType) => {
       return 'Gaussian Blur';
     case ConversionAlgorithmType.MedianBlur:
       return 'Median Blur';
+    case ConversionAlgorithmType.LinearTransform:
+      return 'Linear Transform';
     default:
       return 'Unknown Algorithm';
   }
@@ -61,8 +71,8 @@ export const defaultAlgorithm = (
       return {
         type,
         enabled: true,
-        lowPercentile: 5.0,
-        highPercentile: 95.0,
+        lowPercentile: 1.0,
+        highPercentile: 99.0,
       };
     case ConversionAlgorithmType.GaussianBlur:
       return {
@@ -75,6 +85,13 @@ export const defaultAlgorithm = (
         type,
         enabled: true,
         kernelRadius: 2,
+      };
+    case ConversionAlgorithmType.LinearTransform:
+      return {
+        type,
+        enabled: true,
+        a: 1.0,
+        b: 0.0,
       };
     default:
       throw new Error('Unknown algorithm type');

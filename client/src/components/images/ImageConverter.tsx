@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
 import {
-  to_grayscale,
-  invert_colors,
   clip_pixels_with_percentiles,
-  gaussian_blur,
   median_blur,
   load_image,
   gaussian_blur_image,
+  apply_linear_function,
   Image
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
@@ -216,6 +214,25 @@ const ImageConverter = () => {
           setErrorMessage(`Conversion error: ${err}`);
           return;
         }
+      case ConversionAlgorithmType.LinearTransform: {
+        // coerce and validate params a and b
+        const rawA = (algorithm as any).a;
+        const rawB = (algorithm as any).b;
+        const a = rawA === undefined ? NaN : Number(rawA);
+        const b = rawB === undefined ? NaN : Number(rawB);
+        if (!Number.isFinite(a) || !Number.isFinite(b)) {
+          setErrorMessage('Linear transform requires numeric a and b');
+          return;
+        }
+        try {
+          // This mutates the Image in-place (same pattern as gaussian_blur_image)
+          apply_linear_function(image, a, b);
+          return;
+        } catch (err) {
+          setErrorMessage(`Conversion error: ${err}`);
+          return;
+        }
+      }
       default:
         // fallback for unsupported algorithms
         // This should ideally never happen if the algorithm list is properly managed
