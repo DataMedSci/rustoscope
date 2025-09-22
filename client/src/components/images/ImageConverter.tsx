@@ -197,12 +197,13 @@ const ImageConverter = () => {
       //   return to_grayscale(bytesToProcess);
       // case ConversionAlgorithmType.Invert:
       //   return invert_colors(bytesToProcess);
-      // case ConversionAlgorithmType.HotPixelRemoval:
-      //   return clip_pixels_with_percentiles(
-      //     bytesToProcess,
-      //     algorithm.lowPercentile,
-      //     algorithm.highPercentile
-      //   );
+      case ConversionAlgorithmType.HotPixelRemoval:
+        clip_pixels_with_percentiles(
+          image,
+          algorithm.lowPercentile,
+          algorithm.highPercentile
+        );
+        return;
       // case ConversionAlgorithmType.GaussianBlur:
       //   return gaussian_blur(bytesToProcess, algorithm.sigma);
       // case ConversionAlgorithmType.MedianBlur:
