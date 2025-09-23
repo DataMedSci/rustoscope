@@ -1,10 +1,10 @@
 export enum ConversionAlgorithmType {
-  Invert = 'invert',
-  Grayscale = 'grayscale',
-  HotPixelRemoval = 'hot_pixel_removal',
-  GaussianBlur = 'gaussian_blur',
-  MedianBlur = 'median_blur',
-  LinearTransform = 'linear_transform',
+  Invert = 'Invert',
+  Grayscale = 'Grayscale',
+  HotPixelRemoval = 'HotPixelRemoval',
+  GaussianBlur = 'GaussianBlur',
+  MedianBlur = 'MedianBlur',
+  LinearTransform = 'LinearTransform',
 }
 
 export type Grayscale = { type: ConversionAlgorithmType.Grayscale };
@@ -25,8 +25,8 @@ export type MedianBlur = {
 
 export type LinearTransform = {
   type: ConversionAlgorithmType.LinearTransform;
-  a: number; // slope
-  b: number; // intercept
+  a: number;
+  b: number;
 };
 
 export type ConversionAlgorithm = (

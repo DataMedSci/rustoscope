@@ -78,6 +78,13 @@ const AlgorithmsContainer = ({
                 (updated as { kernelRadius?: number }).kernelRadius ??
                 alg.kernelRadius,
             };
+          case ConversionAlgorithmType.LinearTransform:
+            return {
+              ...alg,
+              enabled: updated.enabled ?? alg.enabled,
+              a: (updated as { a?: number }).a ?? alg.a,
+              b: (updated as { b?: number }).b ?? alg.b,
+            };
           default:
             return alg;
         }
