@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
 import {
   clip_pixels_with_percentiles,
-  median_blur,
+  median_blur_image,
   load_image,
   gaussian_blur_image,
   apply_linear_function,
@@ -202,10 +202,14 @@ const ImageConverter = () => {
           algorithm.highPercentile
         );
         return;
-      // case ConversionAlgorithmType.GaussianBlur:
-      //   return gaussian_blur(bytesToProcess, algorithm.sigma);
-      // case ConversionAlgorithmType.MedianBlur:
-      //   return median_blur(bytesToProcess, algorithm.kernelRadius);
+      case ConversionAlgorithmType.MedianBlur:
+        try {
+          median_blur_image(image, algorithm.kernelRadius);
+          return;
+        } catch (err) {
+          setErrorMessage(`Conversion error: ${err}`);
+          return;
+        }
       case ConversionAlgorithmType.GaussianBlur:
         try {
           gaussian_blur_image(image, algorithm.sigma);
