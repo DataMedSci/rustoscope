@@ -48,9 +48,6 @@ const AlgorithmsContainer = ({
       prev.map((alg, i) => {
         if (i !== idx) return alg;
         switch (alg.type) {
-          case ConversionAlgorithmType.Invert:
-          case ConversionAlgorithmType.Grayscale:
-            return { ...alg, enabled: updated.enabled ?? alg.enabled };
           case ConversionAlgorithmType.HotPixelRemoval:
             return {
               ...alg,

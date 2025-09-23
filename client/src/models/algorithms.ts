@@ -1,14 +1,10 @@
 export enum ConversionAlgorithmType {
-  Invert = 'Invert',
-  Grayscale = 'Grayscale',
   HotPixelRemoval = 'HotPixelRemoval',
   GaussianBlur = 'GaussianBlur',
   MedianBlur = 'MedianBlur',
   LinearTransform = 'LinearTransform',
 }
 
-export type Grayscale = { type: ConversionAlgorithmType.Grayscale };
-export type Invert = { type: ConversionAlgorithmType.Invert };
 export type HotPixelRemoval = {
   type: ConversionAlgorithmType.HotPixelRemoval;
   lowPercentile: number;
@@ -30,8 +26,6 @@ export type LinearTransform = {
 };
 
 export type ConversionAlgorithm = (
-  | Grayscale
-  | Invert
   | HotPixelRemoval
   | GaussianBlur
   | MedianBlur
@@ -42,10 +36,6 @@ export type ConversionAlgorithm = (
 
 export const getAlgorithmName = (type: ConversionAlgorithmType) => {
   switch (type) {
-    case ConversionAlgorithmType.Invert:
-      return 'Invert';
-    case ConversionAlgorithmType.Grayscale:
-      return 'Grayscale';
     case ConversionAlgorithmType.HotPixelRemoval:
       return 'Hot Pixel Removal';
     case ConversionAlgorithmType.GaussianBlur:
@@ -63,10 +53,6 @@ export const defaultAlgorithm = (
   type: ConversionAlgorithmType
 ): ConversionAlgorithm => {
   switch (type) {
-    case ConversionAlgorithmType.Invert:
-      return { type, enabled: true };
-    case ConversionAlgorithmType.Grayscale:
-      return { type, enabled: true };
     case ConversionAlgorithmType.HotPixelRemoval:
       return {
         type,

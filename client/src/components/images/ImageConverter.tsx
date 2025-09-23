@@ -191,10 +191,6 @@ const ImageConverter = () => {
     setErrorMessage: (msg: string) => void
   ): Uint8Array<ArrayBufferLike> | undefined => {
     switch (algorithm.type) {
-      // case ConversionAlgorithmType.Grayscale:
-      //   return to_grayscale(bytesToProcess);
-      // case ConversionAlgorithmType.Invert:
-      //   return invert_colors(bytesToProcess);
       case ConversionAlgorithmType.HotPixelRemoval:
         clip_pixels_with_percentiles(
           image,
