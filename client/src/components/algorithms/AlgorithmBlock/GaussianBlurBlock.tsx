@@ -17,7 +17,7 @@ type GaussianBlurBlockProps = {
   isLast: boolean;
 };
 
-const positiveFloatRegex = /^\d*(\.\d*)?$/; // matches "123", "0.5", ".5", "0.
+const positiveFloatRegex = /^\d*(\.\d*)?$/; // matches "123", "0.5", ".5", "0."
 
 const GaussianBlurBlock = ({
   idx,

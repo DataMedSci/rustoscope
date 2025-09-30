@@ -216,8 +216,7 @@ const ImageConverter = () => {
         }
       case ConversionAlgorithmType.LinearTransform: {
         // coerce and validate params a and b
-        const rawA = (algorithm as any).a;
-        const rawB = (algorithm as any).b;
+        const { a: rawA, b: rawB } = algorithm as LinearTransform;
         const a = rawA === undefined ? NaN : Number(rawA);
         const b = rawB === undefined ? NaN : Number(rawB);
         if (!Number.isFinite(a) || !Number.isFinite(b)) {
