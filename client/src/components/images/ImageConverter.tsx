@@ -1,15 +1,12 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
 import {
-  to_grayscale,
-  invert_colors,
   clip_pixels_with_percentiles,
-  gaussian_blur,
-  median_blur,
-  get_raw_grayscale_pixels,
-  get_image_dimensions,
-  get_16bit_grayscale_pixels,
-  load_image
+  median_blur_image,
+  load_image,
+  gaussian_blur_image,
+  apply_linear_function,
+  Image
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
@@ -20,35 +17,12 @@ import {
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
 
-
-
-const convert = (
-  bytesToProcess: Uint8Array<ArrayBufferLike>,
-  algorithm: ConversionAlgorithm,
-  setErrorMessage: (msg: string) => void
-): Uint8Array<ArrayBufferLike> | undefined => {
-  switch (algorithm.type) {
-    case ConversionAlgorithmType.Grayscale:
-      return to_grayscale(bytesToProcess);
-    case ConversionAlgorithmType.Invert:
-      return invert_colors(bytesToProcess);
-    case ConversionAlgorithmType.HotPixelRemoval:
-      return clip_pixels_with_percentiles(
-        bytesToProcess,
-        algorithm.lowPercentile,
-        algorithm.highPercentile
-      );
-    case ConversionAlgorithmType.GaussianBlur:
-      return gaussian_blur(bytesToProcess, algorithm.sigma);
-    case ConversionAlgorithmType.MedianBlur:
-      return median_blur(bytesToProcess, algorithm.kernelRadius);
-    default:
-      // fallback for unsupported algorithms
-      // This should ideally never happen if the algorithm list is properly managed
-      // That is why we use `as any` to avoid TypeScript errors
-      setErrorMessage(`Unsupported algorithm: ${(algorithm as any).type}`);
-      return;
-  }
+type ImageState = {
+  rawBytes: Uint8Array | null;
+  uploadedImage: Image | null;
+  rawPixels: Uint8Array | Uint16Array | null;
+  imageToConvert: Image | null;
+  convertedPixels: Uint8Array | Uint16Array | null;
 };
 
 
@@ -56,21 +30,21 @@ const ImageConverter = () => {
   const { wasmReady } = useWasm();
   const [algorithms, setAlgorithms] = useState<ConversionAlgorithm[]>([]);
 
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
-  const [imgResult, setImgResult] = useState<string | null>(null);
-  const [rawBytes, setRawBytes] = useState<Uint8Array | null>(null);
-  const [previewsAspectRatios, setPreviewsAspectRatios] = useState(16 / 10);
-  const [rawPixels, setRawPixels] = useState<Uint8Array | Uint16Array | null>(null);
-  const [ImageHorizontalLength, setImageHorizontalLength] = useState<number | null>(null);
-  const [ImageVerticalLength, setImageVerticalLength] = useState<number | null>(null);
-
+  const [imageState, setImageState] = useState<ImageState>({
+    rawBytes: null,
+    uploadedImage: null,
+    rawPixels: null,
+    imageToConvert: null,
+    convertedPixels: null,
+  });
 
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [currentAlgorithm, setCurrentAlgorithm] = useState<string>('');
   const [units, setUnits] = useState<'px' | 'mm'>('px');
-  const [mmPerPx, setMmPerPx] = useState<number>(0.14);
+  const [mmPerPx, setMmPerPx] = useState(16 / 10);
+  const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
   
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -114,82 +88,79 @@ const ImageConverter = () => {
     setErrorMessage(undefined);
 
     try {
-      setRawBytes(bytes);
-
       const img = load_image(bytes);
-
-      setImageHorizontalLength(img.horizontal_length);
-      setImageVerticalLength(img.vertical_length);
-
-      if (img.bits_per_sample === 16) {
-        const pixels16 = img.pixels_u16();
-        if (pixels16) {
-          setRawPixels(pixels16);
-        }
-      } else if (img.bits_per_sample === 8) {
-        const pixels8 = img.pixels_u8();
-        if (pixels8) {
-          setRawPixels(pixels8);
-        }
-      } else {
-        setRawPixels(null);
-        setErrorMessage(`Unsupported bits per sample: ${img.bits_per_sample}`);
+      const pixels = img.bits_per_sample === 16 ? img.pixels_u16() : 
+        img.bits_per_sample === 8 ? img.pixels_u8() : null;
+      if (!pixels) {
+        setErrorMessage('Failed to extract pixel data from image');
+        return;
       }
 
-      if (prevSrcUrlRef.current) {
-        URL.revokeObjectURL(prevSrcUrlRef.current);
-      }
-      const newSrcUrl = URL.createObjectURL(file);
-      prevSrcUrlRef.current = newSrcUrl;
-      setImgSrc(newSrcUrl);
+      setImageState({
+        rawBytes: bytes,
+        uploadedImage: img,
+        rawPixels: pixels,
+        imageToConvert: img,
+        convertedPixels: null,
+      });
 
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
-      setImgSrc(null);
-      setRawBytes(null);
     }
   };
 
   const handleRun = async () => {
     const enabledAlgorithms = algorithms.filter((a) => a.enabled);
-    if (!rawBytes || !wasmReady) return;
+    if (!imageState.rawBytes || !wasmReady) return;
     if (enabledAlgorithms.length === 0) {
       setErrorMessage('No algorithms selected');
       return;
     }
-    
+    if (!imageState.imageToConvert) {
+      const imageToConvert = load_image(imageState.rawBytes);
+      setImageState((prevState) => ({
+        ...prevState,
+        imageToConvert,
+      }));
+      return;
+    }
+
     setErrorMessage(undefined);
     setIsProcessing(true);
     setProcessingProgress(0);
     setCurrentAlgorithm('');
 
     try {
-      let processedBytes: Uint8Array<ArrayBufferLike> | undefined =
-        Uint8Array.from(rawBytes);
-      
       for (let i = 0; i < enabledAlgorithms.length; i++) {
         const algorithm = enabledAlgorithms[i];
         
         setCurrentAlgorithm(getAlgorithmName(algorithm.type));
         setProcessingProgress(Math.round((i / enabledAlgorithms.length) * 100));
-              
-        processedBytes = convert(processedBytes, algorithm, setErrorMessage);
-        if (!processedBytes) {
-          console.error(`Conversion failed for algorithm: ${algorithm.type}`);
+        
+        try {
+          convert(imageState.imageToConvert, algorithm, setErrorMessage);
+        } catch (error) {
+          console.error(`Error occurred while processing algorithm ${algorithm.type}:`, error);
           return;
-        }
-        
-        if (prevResultUrlRef.current) {
-          URL.revokeObjectURL(prevResultUrlRef.current);
-        }
-        
-        const intermediateBlob = new Blob([processedBytes], { type: 'image/png' });
-        const newUrl = URL.createObjectURL(intermediateBlob);
-        prevResultUrlRef.current = newUrl;
-        setImgResult(newUrl);
-        
+        }   
         await new Promise(resolve => setTimeout(resolve, YIELD_DELAY_MS));
       }
+
+       const finalImage = imageState.imageToConvert;
+    let converted: Uint8Array | Uint16Array | null = null;
+    if (finalImage) {
+      if (finalImage.bits_per_sample === 16) {
+        converted = finalImage.pixels_u16() ?? null;
+      } else if (finalImage.bits_per_sample === 8) {
+        converted = finalImage.pixels_u8() ?? null;
+      }
+    }
+
+    setImageState(prev => ({
+      ...prev,
+      convertedPixels: converted,
+    }));
+
 
       setProcessingProgress(100);
       setCurrentAlgorithm('Complete');
@@ -198,10 +169,6 @@ const ImageConverter = () => {
         URL.revokeObjectURL(prevResultUrlRef.current);
       }
       
-      const finalBlob = new Blob([processedBytes], { type: 'image/png' });
-      const finalUrl = URL.createObjectURL(finalBlob);
-      prevResultUrlRef.current = finalUrl;
-      setImgResult(finalUrl);
       setErrorMessage(undefined);
       
       await new Promise(resolve => setTimeout(resolve, FINAL_DISPLAY_DELAY_MS));
@@ -218,6 +185,62 @@ const ImageConverter = () => {
     }
   };
 
+    const convert = (
+    image: Image,
+    algorithm: ConversionAlgorithm,
+    setErrorMessage: (msg: string) => void
+  ): Uint8Array<ArrayBufferLike> | undefined => {
+    switch (algorithm.type) {
+      case ConversionAlgorithmType.HotPixelRemoval:
+        clip_pixels_with_percentiles(
+          image,
+          algorithm.lowPercentile,
+          algorithm.highPercentile
+        );
+        return;
+      case ConversionAlgorithmType.MedianBlur:
+        try {
+          median_blur_image(image, algorithm.kernelRadius);
+          return;
+        } catch (err) {
+          setErrorMessage(`Conversion error: ${err}`);
+          return;
+        }
+      case ConversionAlgorithmType.GaussianBlur:
+        try {
+          gaussian_blur_image(image, algorithm.sigma);
+          return;
+        } catch (err) {
+          setErrorMessage(`Conversion error: ${err}`);
+          return;
+        }
+      case ConversionAlgorithmType.LinearTransform: {
+        // coerce and validate params a and b
+        const { a: rawA, b: rawB } = algorithm as LinearTransform;
+        const a = rawA === undefined ? NaN : Number(rawA);
+        const b = rawB === undefined ? NaN : Number(rawB);
+        if (!Number.isFinite(a) || !Number.isFinite(b)) {
+          setErrorMessage('Linear transform requires numeric a and b');
+          return;
+        }
+        try {
+          // This mutates the Image in-place (same pattern as gaussian_blur_image)
+          apply_linear_function(image, a, b);
+          return;
+        } catch (err) {
+          setErrorMessage(`Conversion error: ${err}`);
+          return;
+        }
+      }
+      default:
+        // fallback for unsupported algorithms
+        // This should ideally never happen if the algorithm list is properly managed
+        // That is why we use `as any` to avoid TypeScript errors
+        setErrorMessage(`Unsupported algorithm: ${(algorithm as any).type}`);
+        return;
+    }
+  };
+
   return (
     <div
       className={`flex items-center h-full w-full p-1 bg-white ${
@@ -227,10 +250,10 @@ const ImageConverter = () => {
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <ImageJSRootPreview
-            pixels={rawPixels}
-            HorizontalLength={ImageHorizontalLength}
-            VerticalLength={ImageVerticalLength}
-            header="Original Image (JSROOT)"
+            pixels={imageState.rawPixels}
+            HorizontalLength={imageState.uploadedImage ? imageState.uploadedImage.horizontal_length : null}
+            VerticalLength={imageState.uploadedImage ? imageState.uploadedImage.vertical_length : null}
+            header="Original Image"
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
             error={errorMessage}
@@ -241,9 +264,9 @@ const ImageConverter = () => {
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
-            pixels={rawBytes}
-            HorizontalLength={ImageHorizontalLength}
-            VerticalLength={ImageVerticalLength}
+            pixels={imageState.convertedPixels}
+            HorizontalLength={imageState.imageToConvert ? imageState.imageToConvert.horizontal_length : null}
+            VerticalLength={imageState.imageToConvert ? imageState.imageToConvert.vertical_length : null}
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}

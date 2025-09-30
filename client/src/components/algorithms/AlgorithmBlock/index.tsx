@@ -7,6 +7,8 @@ import SimpleAlgorithmBlock from './SimpleAlgorithmBlock';
 import HotPixelsRemovalBlock from './HotPixelsRemovalBlock';
 import GaussianBlurBlock from './GaussianBlurBlock';
 import MedianBlurBlock from './MedianBlurBlock';
+import LinearFunctionBlock from './LinearFunctionBlock';
+
 
 export type AlgorithmBlockProps = {
   idx: number;
@@ -32,6 +34,8 @@ const AlgorithmBlock = (props: AlgorithmBlockProps) => {
       return <GaussianBlurBlock {...props} algorithm={algorithm} />;
     case ConversionAlgorithmType.MedianBlur:
       return <MedianBlurBlock {...props} algorithm={algorithm} />;
+    case ConversionAlgorithmType.LinearTransform:
+      return <LinearFunctionBlock {...props} algorithm={algorithm} />;
     default:
       return <SimpleAlgorithmBlock {...props} algorithm={algorithm} />;
   }

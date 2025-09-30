@@ -48,9 +48,6 @@ const AlgorithmsContainer = ({
       prev.map((alg, i) => {
         if (i !== idx) return alg;
         switch (alg.type) {
-          case ConversionAlgorithmType.Invert:
-          case ConversionAlgorithmType.Grayscale:
-            return { ...alg, enabled: updated.enabled ?? alg.enabled };
           case ConversionAlgorithmType.HotPixelRemoval:
             return {
               ...alg,
@@ -77,6 +74,13 @@ const AlgorithmsContainer = ({
               kernelRadius:
                 (updated as { kernelRadius?: number }).kernelRadius ??
                 alg.kernelRadius,
+            };
+          case ConversionAlgorithmType.LinearTransform:
+            return {
+              ...alg,
+              enabled: updated.enabled ?? alg.enabled,
+              a: (updated as { a?: number }).a ?? alg.a,
+              b: (updated as { b?: number }).b ?? alg.b,
             };
           default:
             return alg;
