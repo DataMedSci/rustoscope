@@ -39,8 +39,9 @@ pub fn clip_pixels_with_percentiles(
             }
 
             // Compute cutoffs
-            let low_cutoff = percentile_cutoff_u8(&mut data.clone(), low_percentile);
-            let high_cutoff = percentile_cutoff_u8(&mut data.clone(), high_percentile);
+            let mut scratch = data.clone();
+            let low_cutoff = percentile_cutoff_u8(&mut scratch, low_percentile);
+            let high_cutoff = percentile_cutoff_u8(&mut scratch, high_percentile);
 
             let low_val: u8 = low_cutoff.unwrap_or(0);
             let high_val: u8 = high_cutoff.unwrap_or(255);
@@ -61,8 +62,9 @@ pub fn clip_pixels_with_percentiles(
             }
 
             // Compute cutoffs
-            let low_cutoff = percentile_cutoff_u16(&mut data.clone(), low_percentile);
-            let high_cutoff = percentile_cutoff_u16(&mut data.clone(), high_percentile);
+            let mut scratch = data.clone();
+            let low_cutoff = percentile_cutoff_u16(&mut scratch, low_percentile);
+            let high_cutoff = percentile_cutoff_u16(&mut scratch, high_percentile);
 
             let low_val: u16 = low_cutoff.unwrap_or(0);
             let high_val: u16 = high_cutoff.unwrap_or(u16::MAX);

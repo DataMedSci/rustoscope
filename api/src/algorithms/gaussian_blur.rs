@@ -9,7 +9,8 @@ pub fn gaussian_blur_image(img: &mut Image, sigma: f32) -> Result<(), JsValue> {
         return Err(JsValue::from_str("Sigma must be positive"));
     }
 
-    // Convert Image struct into DynamicImage
+    // Conversion to DynamicImage to use image crate's blur. This requires wrapping pixel vector in
+    // an ImageBuffer first, and then converting that to DynamicImage.
     let dyn_img: DynamicImage = match &img.pixels {
         Pixels::U8(data) => match img.color_type.as_str() {
             "Rgb8" => {
