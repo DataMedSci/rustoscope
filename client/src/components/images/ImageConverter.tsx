@@ -13,6 +13,7 @@ import {
   ConversionAlgorithm,
   ConversionAlgorithmType,
   getAlgorithmName,
+  LinearTransform,
 } from '@/models/algorithms';
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
