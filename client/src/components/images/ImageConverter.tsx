@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
+import { TargetedEvent } from 'preact/compat';
+import ImageJSRootPreview from './ImageJSRootPreview';
+
 import {
   clip_pixels_with_percentiles,
   median_blur_image,
@@ -14,8 +17,7 @@ import {
   ConversionAlgorithmType,
   getAlgorithmName,
 } from '@/models/algorithms';
-import { TargetedEvent } from 'preact/compat';
-import ImageJSRootPreview from './ImageJSRootPreview';
+import DragAndDropZone from '@/components/common/DragAndDropZone';
 
 type ImageState = {
   rawBytes: Uint8Array | null;
@@ -215,10 +217,8 @@ const ImageConverter = () => {
           return;
         }
       case ConversionAlgorithmType.LinearTransform: {
-        // coerce and validate params a and b
-        const { a: rawA, b: rawB } = algorithm as LinearTransform;
-        const a = rawA === undefined ? NaN : Number(rawA);
-        const b = rawB === undefined ? NaN : Number(rawB);
+        const a = Number(algorithm.a);
+        const b = Number(algorithm.b);
         if (!Number.isFinite(a) || !Number.isFinite(b)) {
           setErrorMessage('Linear transform requires numeric a and b');
           return;
@@ -249,18 +249,31 @@ const ImageConverter = () => {
     >
       <div className="flex w-3/4 h-full rounded-md bg-orange-100 mr-1 mt-2">
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
-          <ImageJSRootPreview
-            pixels={imageState.rawPixels}
-            HorizontalLength={imageState.uploadedImage ? imageState.uploadedImage.horizontal_length : null}
-            VerticalLength={imageState.uploadedImage ? imageState.uploadedImage.vertical_length : null}
-            header="Original Image"
-            aspectRatio={previewsAspectRatios}
-            setAspectRatio={setPreviewsAspectRatios}
-            error={errorMessage}
-            units={units}
-            mmPerPx={mmPerPx}
-          />
+          <DragAndDropZone
+            onFileDrop={async (file) => {
+              // Create a synthetic event to reuse handleUpload
+              const syntheticEvent = {
+                currentTarget: { files: [file] },
+              } as unknown as TargetedEvent<HTMLInputElement, Event>;
 
+              await handleUpload(syntheticEvent);
+            }}
+            className="w-full"
+          >
+            <ImageJSRootPreview
+              pixels={imageState.rawPixels}
+              HorizontalLength={imageState.uploadedImage ? imageState.uploadedImage.horizontal_length : null}
+              VerticalLength={imageState.uploadedImage ? imageState.uploadedImage.vertical_length : null}
+              header="Original Image"
+              aspectRatio={previewsAspectRatios}
+              setAspectRatio={setPreviewsAspectRatios}
+              error={errorMessage}
+              units={units}
+              mmPerPx={mmPerPx}
+              emptyText='Drop image here or click "Upload image" button'
+            />
+          </DragAndDropZone>
+        
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
@@ -274,7 +287,7 @@ const ImageConverter = () => {
             units={units}
             mmPerPx={mmPerPx}
           />
-          
+
           {/* Progress Indicator */}
           {isProcessing && (
             <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-white rounded-lg px-4 py-2 shadow-md z-10">
