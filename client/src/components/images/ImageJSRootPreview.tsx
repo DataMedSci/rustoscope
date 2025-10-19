@@ -16,6 +16,8 @@ type ImagePreviewProps = {
   error?: string;
   units?: 'px' | 'mm';
   mmPerPx?: number;
+  // used for correctly displaying DragAndDrop overlay
+  externalContainerRef?: (el: HTMLDivElement | null) => void;
 };
 
 const DRAW_OPTS = 'colz;gridxy;nostat;tickxy';
@@ -31,6 +33,7 @@ const ImagePreview = ({
   error,
   units = 'px',
   mmPerPx = 0.14,
+  externalContainerRef,
 }: ImagePreviewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -111,12 +114,16 @@ const ImagePreview = ({
 
       {pixels && HorizontalLength && VerticalLength ? (
         <div
-          ref={containerRef}
+          ref={(el) => {
+           containerRef.current = el;
+           externalContainerRef?.(el);
+         }}
           style={previewStyle}
           className="w-full rounded-md bg-gray-50 shadow-md overflow-hidden"
         />
       ) : (
         <div
+          ref={(el) => externalContainerRef?.(el)}
           className="w-full flex justify-center items-center rounded-md border-2 border-dashed border-gray-300 bg-gray-50 shadow-sm"
           style={previewStyle}
         >
