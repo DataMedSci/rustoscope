@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.1.8",
     "jsroot": "^7.9.1",
     "preact": "^10.26.5",
+    "react-dropzone": "^14.3.8",
     "react-select": "^5.10.1"
   },
   "devDependencies": {
