@@ -1,5 +1,6 @@
 import { useDropzone, type Accept } from 'react-dropzone';
-import type { ComponentChildren } from 'preact';
+import {useEffect, useRef, useState} from "preact/hooks";
+import type { ComponentChildren, RefObject } from 'preact';
 
 type DragAndDropZoneProps = {
   onFileDrop: (file: File) => void | Promise<void>;
@@ -7,6 +8,7 @@ type DragAndDropZoneProps = {
   multiple?: boolean;
   className?: string;
   children?: ComponentChildren;
+  overlayTargetRef?: RefObject<HTMLElement>;
 };
 
 const DragAndDropZone = ({
@@ -15,8 +17,9 @@ const DragAndDropZone = ({
   multiple = false,
   className = '',
   children,
+  overlayTargetRef,
 }: DragAndDropZoneProps) => {
-  const { getRootProps, getInputProps } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept,
     multiple,
     maxFiles: multiple ? undefined : 1,
@@ -24,16 +27,80 @@ const DragAndDropZone = ({
       const f = files[0];
       if (f) await onFileDrop(f);
     },
+    onDragEnter: () => updateOverlayRect(),
+    onDragOver: () => updateOverlayRect(),
   });
 
   // react-dropzone zwraca propsy typowane pod React — rzutujemy dla Preact
   const rootProps = getRootProps({ refKey: 'ref' }) as any;
   const inputProps = getInputProps() as any;
 
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [overlayRect, setOverlayRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+
+  const setWrapperRef = (el: HTMLDivElement | null) => {
+    if (typeof rootProps.ref === 'function') {
+      rootProps.ref(el);
+    } else if (rootProps.ref) {
+      (rootProps.ref as any).current = el;
+    }
+    wrapperRef.current = el;
+  };
+
+  const updateOverlayRect = () => {
+    const wrapper = wrapperRef.current;
+    const target = overlayTargetRef?.current ?? null;
+    if (!wrapper || !target) {
+      setOverlayRect(null);
+      return;
+    }
+    const w = wrapper.getBoundingClientRect();
+    const t = target.getBoundingClientRect();
+    setOverlayRect({
+      left: t.left - w.left,
+      top: t.top - w.top,
+      width: t.width,
+      height: t.height,
+    });
+  };
+
+  useEffect(() => {
+    updateOverlayRect();
+    const t = overlayTargetRef?.current ?? null;
+    if (!t) return;
+    const ro = new ResizeObserver(() => updateOverlayRect());
+    ro.observe(t);
+    const onWin = () => updateOverlayRect();
+    window.addEventListener('resize', onWin);
+    window.addEventListener('scroll', onWin, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', onWin);
+      window.removeEventListener('scroll', onWin, true);
+    };
+  }, [overlayTargetRef]);
+
+  useEffect(() => {
+    if (isDragActive) updateOverlayRect();
+  }, [isDragActive]);
+
   return (
-    <div {...rootProps} className={className}>
+    <div {...rootProps} ref={setWrapperRef} className={`relative ${className}`.trim()}>
       <input {...inputProps} />
       {children}
+
+      {isDragActive && overlayRect && (
+        <div
+          style={{
+            position: 'absolute',
+            left: overlayRect.left,
+            top: overlayRect.top,
+            width: overlayRect.width,
+            height: overlayRect.height,
+          }}
+          className="bg-orange-100/60 border-2 border-orange-400 rounded-md pointer-events-none"
+        />
+      )}
     </div>
   );
 };

@@ -17,6 +17,7 @@ type ImagePreviewProps = {
   units?: 'px' | 'mm';
   mmPerPx?: number;
   // used for correctly displaying DragAndDrop overlay
+  externalContainerRef?: (el: HTMLDivElement | null) => void;
 };
 
 const DRAW_OPTS = 'colz;gridxy;nostat;tickxy';
@@ -32,6 +33,7 @@ const ImagePreview = ({
   error,
   units = 'px',
   mmPerPx = 0.14,
+  externalContainerRef,
 }: ImagePreviewProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -48,12 +50,13 @@ const ImagePreview = ({
     // Keep the layout box stable
     setAspectRatio(HorizontalLength / VerticalLength);
 
-    // Build histogram and draw
-    const w = HorizontalLength;
-    const h = VerticalLength;
 
     // Clear any previous drawing to avoid stacking
     host.innerHTML = '';
+
+    // Build histogram and draw
+    const w = HorizontalLength;
+    const h = VerticalLength;
 
     const hist = createHistogram('TH2F', w, h);
 
@@ -112,11 +115,16 @@ const ImagePreview = ({
 
       {pixels && HorizontalLength && VerticalLength ? (
         <div
+          ref= {(el) => {
+            containerRef.current = el;
+            externalContainerRef?.(el);
+          }}
           style={previewStyle}
           className="w-full rounded-md bg-gray-50 shadow-md overflow-hidden"
         />
       ) : (
         <div
+          ref= {(el) =>  externalContainerRef?.(el)}
           className="w-full flex justify-center items-center rounded-md border-2 border-dashed border-gray-300 bg-gray-50 shadow-sm"
           style={previewStyle}
         >

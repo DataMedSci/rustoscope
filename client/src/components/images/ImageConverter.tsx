@@ -48,6 +48,7 @@ const ImageConverter = () => {
   const [units, setUnits] = useState<'px' | 'mm'>('px');
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
+  const originalPreviewRef = useRef<HTMLDivElement | null>(null);
   
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -258,6 +259,7 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <DragAndDropZone
             accept={acceptedFileTypes}
+            overlayTargetRef={originalPreviewRef}
             onFileDrop={async (file) => {
               // Create a synthetic event to reuse handleUpload
               const syntheticEvent = {
@@ -279,6 +281,7 @@ const ImageConverter = () => {
               units={units}
               mmPerPx={mmPerPx}
               emptyText='Drop image here or click "Upload image" button'
+              externalContainerRef={(el) => (originalPreviewRef.current = el)}
             />
           </DragAndDropZone>
         
