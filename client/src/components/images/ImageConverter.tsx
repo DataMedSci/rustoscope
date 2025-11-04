@@ -78,34 +78,27 @@ const ImageConverter = () => {
     };
   }, []);
 
-  const handleUpload = async (e: TargetedEvent<HTMLInputElement, Event>) => {
-    const file = e.currentTarget.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     if (!wasmReady) {
       setErrorMessage('WASM engine not ready — try again in a moment');
       return;
     }
-
     const allowedTypes = ['image/tiff', 'image/png', 'image/jpg', 'image/jpeg'];
     if (!allowedTypes.includes(file.type)) {
       setErrorMessage('Unsupported image type. Supported: [png, jpg, tiff]');
       return;
     }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+    const bytes = new Uint8Array(await file.arrayBuffer());
     setErrorMessage(undefined);
-
     try {
       const img = load_image(bytes);
-      const pixels = img.bits_per_sample === 16 ? img.pixels_u16() : 
+      const pixels =
+        img.bits_per_sample === 16 ? img.pixels_u16() :
         img.bits_per_sample === 8 ? img.pixels_u8() : null;
       if (!pixels) {
         setErrorMessage('Failed to extract pixel data from image');
         return;
       }
-
       setImageState({
         rawBytes: bytes,
         uploadedImage: img,
@@ -113,10 +106,14 @@ const ImageConverter = () => {
         imageToConvert: img,
         convertedPixels: null,
       });
-
     } catch (err) {
       setErrorMessage(`Upload error: ${err}`);
     }
+  };
+
+  const handleUpload = async (e: TargetedEvent<HTMLInputElement, Event>) => {
+    const file = e.currentTarget.files?.[0];
+    if (file) await processFile(file);
   };
 
   const handleRun = async () => {
@@ -260,14 +257,7 @@ const ImageConverter = () => {
           <DragAndDropZone
             accept={acceptedFileTypes}
             overlayTargetRef={originalPreviewRef}
-            onFileDrop={async (file) => {
-              // Create a synthetic event to reuse handleUpload
-              const syntheticEvent = {
-                currentTarget: { files: [file] },
-              } as unknown as TargetedEvent<HTMLInputElement, Event>;
-
-              await handleUpload(syntheticEvent);
-            }}
+            onFileDrop={processFile}
             className="w-full"
           >
             <ImageJSRootPreview
