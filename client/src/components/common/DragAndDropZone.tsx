@@ -31,7 +31,7 @@ const DragAndDropZone = ({
     onDragOver: () => updateOverlayRect(),
   });
 
-  // react-dropzone zwraca propsy typowane pod React — rzutujemy dla Preact
+  // react-dropzone returns props typed for React — we cast them for Preact
   const rootProps = getRootProps({ refKey: 'ref' }) as any;
   const inputProps = getInputProps() as any;
 

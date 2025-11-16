@@ -270,7 +270,7 @@ const ImageConverter = () => {
               error={errorMessage}
               units={units}
               mmPerPx={mmPerPx}
-              emptyText='Drop image here or click "Upload image" button'
+              emptyText="Drop image here or click \"Upload image\" button"
               externalContainerRef={(el) => (originalPreviewRef.current = el)}
             />
           </DragAndDropZone>
