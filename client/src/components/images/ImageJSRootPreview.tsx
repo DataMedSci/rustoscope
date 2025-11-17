@@ -124,7 +124,7 @@ const ImagePreview = ({
         />
       ) : (
         <div
-          ref= {(el) =>  externalContainerRef?.(el)}
+          ref={(el) => externalContainerRef?.(el)}
           className="w-full flex justify-center items-center rounded-md border-2 border-dashed border-gray-300 bg-gray-50 shadow-sm"
           style={previewStyle}
         >
