@@ -115,7 +115,7 @@ const ImagePreview = ({
 
       {pixels && HorizontalLength && VerticalLength ? (
         <div
-          ref= {(el) => {
+          ref = {(el) => {
             containerRef.current = el;
             externalContainerRef?.(el);
           }}

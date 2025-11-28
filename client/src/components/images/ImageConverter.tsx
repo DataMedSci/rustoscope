@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
-import { Accept} from 'react-dropzone';
+import { Accept } from 'react-dropzone';
 
 import {
   clip_pixels_with_percentiles,
@@ -48,7 +48,7 @@ const ImageConverter = () => {
   const [units, setUnits] = useState<'px' | 'mm'>('px');
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
-  const originalPreviewRef = useRef<HTMLDivElement | null>(null);
+const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
   
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -256,7 +256,7 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <DragAndDropZone
             accept={acceptedFileTypes}
-            overlayTargetRef={originalPreviewRef}
+            overlayTargetRef={{current: previewElement}}
             onFileDrop={processFile}
             className="w-full"
           >
@@ -270,8 +270,8 @@ const ImageConverter = () => {
               error={errorMessage}
               units={units}
               mmPerPx={mmPerPx}
-              emptyText="Drop image here or click 'Upload image 'button"
-              externalContainerRef={(el) => (originalPreviewRef.current = el)}
+              emptyText="Drop image here or click 'Upload image' button"
+              externalContainerRef={setPreviewElement}
             />
           </DragAndDropZone>
         

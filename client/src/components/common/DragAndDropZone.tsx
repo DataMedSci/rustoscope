@@ -22,6 +22,7 @@ const DragAndDropZone = ({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept,
     multiple,
+    noClick: true,
     maxFiles: multiple ? undefined : 1,
     onDropAccepted: async (files) => {
       const f = files[0];
