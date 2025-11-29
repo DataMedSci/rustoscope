@@ -54,7 +54,7 @@ const DragAndDropZone = ({
 
   // react-dropzone returns props typed for React — we cast them for Preact
   const rootProps = getRootProps({ refKey: 'ref' }) as { ref?: unknown; [key: string]: unknown };
-  const inputProps = getInputProps() as { ref?: unknown; [key: string]: unknown };
+  const inputProps = getInputProps() as any;
 
   const setWrapperRef = (el: HTMLDivElement | null) => {
     if (typeof rootProps.ref === 'function') {
