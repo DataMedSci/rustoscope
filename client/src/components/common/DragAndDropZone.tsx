@@ -1,5 +1,5 @@
 import { useDropzone, type Accept } from 'react-dropzone';
-import {useEffect, useRef, useState, useCallback } from "preact/hooks";
+import { useEffect, useRef, useState, useCallback } from "preact/hooks";
 import type { ComponentChildren, RefObject } from 'preact';
 
 type DragAndDropZoneProps = {

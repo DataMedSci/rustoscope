@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
+import { useState, useRef, useEffect } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
@@ -59,11 +59,11 @@ const ImageConverter = () => {
   const acceptedFileTypes: Accept = {
     'image/tiff': ['.tiff', '.tif'],
     'image/png': ['.png'],
-    'image/jpeg': ['.jpeg'],
+    'image/jpeg': ['.jpeg', '.jpg'],
   };
 
   useEffect(() => {
-  overlayTargetRef.current = previewElement;
+    overlayTargetRef.current = previewElement;
   }, [previewElement]);
 
   const cleanupBlobUrls = () => {
@@ -88,9 +88,9 @@ const ImageConverter = () => {
       setErrorMessage('WASM engine not ready — try again in a moment');
       return;
     }
-    const allowedTypes = ['image/tiff', 'image/png', 'image/jpg', 'image/jpeg'];
+    const allowedTypes = ['image/tiff', 'image/png', 'image/jpeg'];
     if (!allowedTypes.includes(file.type)) {
-      setErrorMessage('Unsupported image type. Supported: [png, jpg, tiff]');
+      setErrorMessage('Unsupported image type. Supported: [png, jpeg, tiff]');
       return;
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
