@@ -90,7 +90,7 @@ const DragAndDropZone = ({
       window.removeEventListener('resize', onWin);
       window.removeEventListener('scroll', onWin, true);
     };
-  }, [overlayTargetRef, updateOverlayRect]);
+  }, [updateOverlayRect]);
 
   useEffect(() => {
     if (isDragActive) updateOverlayRect();
