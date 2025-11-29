@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'preact/hooks';
+import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
 import { useWasm } from '@/hooks/useWasm';
 import { TargetedEvent } from 'preact/compat';
 import ImageJSRootPreview from './ImageJSRootPreview';
@@ -49,7 +49,8 @@ const ImageConverter = () => {
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
   const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
-  
+  const overlayTargetRef = useMemo(() => ({ current: previewElement }), [previewElement]);
+
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
   const YIELD_DELAY_MS = 10;
@@ -256,7 +257,7 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md">
           <DragAndDropZone
             accept={acceptedFileTypes}
-            overlayTargetRef={{current: previewElement}}
+            overlayTargetRef={overlayTargetRef}
             onFileDrop={processFile}
             className="w-full"
           >
@@ -274,7 +275,6 @@ const ImageConverter = () => {
               externalContainerRef={setPreviewElement}
             />
           </DragAndDropZone>
-        
         </div>
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview

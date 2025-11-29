@@ -1,5 +1,5 @@
 import { useDropzone, type Accept } from 'react-dropzone';
-import {useEffect, useRef, useState, useCallback} from "preact/hooks";
+import {useEffect, useRef, useState, useCallback } from "preact/hooks";
 import type { ComponentChildren, RefObject } from 'preact';
 
 type DragAndDropZoneProps = {
@@ -19,34 +19,9 @@ const DragAndDropZone = ({
   children,
   overlayTargetRef,
 }: DragAndDropZoneProps) => {
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept,
-    multiple,
-    noClick: true,
-    maxFiles: multiple ? undefined : 1,
-    onDropAccepted: async (files) => {
-      const f = files[0];
-      if (f) await onFileDrop(f);
-    },
-    onDragEnter: () => updateOverlayRect(),
-    onDragOver: () => updateOverlayRect(),
-  });
-
-  // react-dropzone returns props typed for React — we cast them for Preact
-  const rootProps = getRootProps({ refKey: 'ref' }) as any;
-  const inputProps = getInputProps() as any;
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [overlayRect, setOverlayRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
-
-  const setWrapperRef = (el: HTMLDivElement | null) => {
-    if (typeof rootProps.ref === 'function') {
-      rootProps.ref(el);
-    } else if (rootProps.ref) {
-      (rootProps.ref as any).current = el;
-    }
-    wrapperRef.current = el;
-  };
 
   const updateOverlayRect = useCallback(() => {
     const wrapper = wrapperRef.current;
@@ -64,6 +39,32 @@ const DragAndDropZone = ({
       height: t.height,
     });
   }, [overlayTargetRef]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept,
+    multiple,
+    noClick: true,
+    maxFiles: multiple ? undefined : 1,
+    onDropAccepted: async (files) => {
+      const f = files[0];
+      if (f) await onFileDrop(f);
+    },
+    onDragEnter: () => updateOverlayRect(),
+    onDragOver: () => updateOverlayRect(),
+  });
+
+  // react-dropzone returns props typed for React — we cast them for Preact
+  const rootProps = getRootProps({ refKey: 'ref' }) as any;
+  const inputProps = getInputProps() as any;
+
+  const setWrapperRef = (el: HTMLDivElement | null) => {
+    if (typeof rootProps.ref === 'function') {
+      rootProps.ref(el);
+    } else if (rootProps.ref) {
+      (rootProps.ref as any).current = el;
+    }
+    wrapperRef.current = el;
+  };
 
   useEffect(() => {
     updateOverlayRect();
