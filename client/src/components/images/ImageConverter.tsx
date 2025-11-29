@@ -49,7 +49,7 @@ const ImageConverter = () => {
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
   const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
-  const overlayTargetRef = useMemo(() => ({ current: previewElement }), [previewElement]);
+  const overlayTargetRef = useRef<HTMLElement | null>(null);
 
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -59,8 +59,12 @@ const ImageConverter = () => {
   const acceptedFileTypes: Accept = {
     'image/tiff': ['.tiff', '.tif'],
     'image/png': ['.png'],
-    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/jpeg': ['.jpeg'],
   };
+
+  useEffect(() => {
+  overlayTargetRef.current = previewElement;
+  }, [previewElement]);
 
   const cleanupBlobUrls = () => {
     if (prevSrcUrlRef.current) {
