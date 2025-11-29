@@ -16,7 +16,7 @@ type ImagePreviewProps = {
   error?: string;
   units?: 'px' | 'mm';
   mmPerPx?: number;
-  // used for correctly displaying DragAndDrop overlay
+  // Used for correctly displaying the drag-and-drop overlay.
   externalContainerRef?: (el: HTMLDivElement | null) => void;
 };
 

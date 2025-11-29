@@ -53,14 +53,14 @@ const DragAndDropZone = ({
   });
 
   // react-dropzone returns props typed for React — we cast them for Preact
-  const rootProps = getRootProps({ refKey: 'ref' }) as { ref?: any; [key: string]: any };
-  const inputProps = getInputProps() as { ref?: any; [key: string]: any };
+  const rootProps = getRootProps({ refKey: 'ref' }) as { ref?: unknown; [key: string]: unknown };
+  const inputProps = getInputProps() as { ref?: unknown; [key: string]: unknown };
 
   const setWrapperRef = (el: HTMLDivElement | null) => {
     if (typeof rootProps.ref === 'function') {
       rootProps.ref(el);
-    } else if (rootProps.ref) {
-      (rootProps.ref as any).current = el;
+    } else if (rootProps.ref && typeof rootProps.ref === 'object' && 'current' in rootProps.ref) {
+      (rootProps.ref as { current: HTMLDivElement | null }).current = el;
     }
     wrapperRef.current = el;
   };
@@ -86,7 +86,7 @@ const DragAndDropZone = ({
   }, [isDragActive, updateOverlayRect]);
   return (
     <div {...rootProps} ref={setWrapperRef} className={`relative ${className}`.trim()}>
-      <input {...inputProps} aria-label="File upload via drag&drop"/>
+      <input {...inputProps} aria-label="File upload via drag and drop"/>
       {children}
 
       {isDragActive && overlayRect && (

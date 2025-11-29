@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
-import { useWasm } from '@/hooks/useWasm';
 import { TargetedEvent } from 'preact/compat';
-import ImageJSRootPreview from './ImageJSRootPreview';
 import { Accept } from 'react-dropzone';
 
+import { useWasm } from '@/hooks/useWasm';
+import ImageJSRootPreview from './ImageJSRootPreview';
 import {
   clip_pixels_with_percentiles,
   median_blur_image,
