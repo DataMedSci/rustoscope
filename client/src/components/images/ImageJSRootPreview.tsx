@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { BIT, createHistogram, draw } from 'jsroot';
+import type { RefObject } from 'preact';
 
 type TypedPixels = Uint8Array | Uint16Array | Float32Array;
 
@@ -17,7 +18,7 @@ type ImagePreviewProps = {
   units?: 'px' | 'mm';
   mmPerPx?: number;
   // Used for correctly displaying the drag-and-drop overlay.
-  externalContainerRef?: (el: HTMLDivElement | null) => void;
+  externalContainerRef?: RefObject<HTMLDivElement | null>;
 };
 
 const DRAW_OPTS = 'colz;gridxy;nostat;tickxy';
@@ -125,22 +126,30 @@ const ImagePreview = ({
 
   const previewStyle = { aspectRatio: aspectRatio.toFixed(5) };
 
+  const setContainerRef = (el: HTMLDivElement | null) => {
+    containerRef.current = el;
+    if (externalContainerRef) {
+      externalContainerRef.current = el;
+    }
+  };
+
   return (
     <div className="w-full flex flex-col items-center justify-center p-2">
       {header && <div className="text-xl font-bold p-2">{header}</div>}
 
       {pixels && HorizontalLength && VerticalLength ? (
         <div
-          ref={(el) => {
-            containerRef.current = el;
-            externalContainerRef?.(el);
-          }}
+          ref={setContainerRef}
           style={previewStyle}
           className="w-full rounded-md bg-gray-50 shadow-md overflow-hidden"
         />
       ) : (
         <div
-          ref={(el) => externalContainerRef?.(el)}
+          ref={(el) => {
+            if (externalContainerRef) {
+              externalContainerRef.current = el;
+            }
+          }}
           className="w-full flex justify-center items-center rounded-md border-2 border-dashed border-gray-300 bg-gray-50 shadow-sm"
           style={previewStyle}
         >

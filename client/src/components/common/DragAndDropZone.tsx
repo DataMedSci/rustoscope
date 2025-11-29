@@ -8,7 +8,7 @@ type DragAndDropZoneProps = {
   multiple?: boolean;
   className?: string;
   children?: ComponentChildren;
-  overlayTargetRef?: RefObject<HTMLElement>;
+  overlayTargetRef?: RefObject<HTMLDivElement | null>;
 };
 
 const DragAndDropZone = ({

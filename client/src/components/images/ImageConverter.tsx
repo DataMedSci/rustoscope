@@ -47,10 +47,7 @@ const ImageConverter = () => {
   const [units, setUnits] = useState<'px' | 'mm'>('px');
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
-  const [previewElement, setPreviewElement] = useState<HTMLElement | null>(
-    null
-  );
-  const overlayTargetRef = useRef<HTMLElement | null>(null);
+  const overlayTargetRef = useRef<HTMLDivElement | null>(null);
 
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -62,10 +59,6 @@ const ImageConverter = () => {
     'image/png': ['.png'],
     'image/jpeg': ['.jpeg', '.jpg'],
   };
-
-  useEffect(() => {
-    overlayTargetRef.current = previewElement;
-  }, [previewElement]);
 
   const cleanupBlobUrls = () => {
     if (prevSrcUrlRef.current) {
@@ -290,7 +283,7 @@ const ImageConverter = () => {
               units={units}
               mmPerPx={mmPerPx}
               emptyText="Drop image here or click 'Upload image' button"
-              externalContainerRef={setPreviewElement}
+              externalContainerRef={overlayTargetRef}
             />
           </DragAndDropZone>
         </div>
