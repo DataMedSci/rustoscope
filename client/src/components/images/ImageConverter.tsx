@@ -48,7 +48,7 @@ const ImageConverter = () => {
   const [units, setUnits] = useState<'px' | 'mm'>('px');
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
-const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
+  const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
   
   const prevSrcUrlRef = useRef<string | null>(null);
   const prevResultUrlRef = useRef<string | null>(null);
@@ -58,7 +58,7 @@ const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
   const acceptedFileTypes: Accept = {
     'image/tiff': ['.tiff', '.tif'],
     'image/png': ['.png'],
-    'image/jpg': ['.jpg', '.jpeg'],
+    'image/jpeg': ['.jpg', '.jpeg'],
   };
 
   const cleanupBlobUrls = () => {

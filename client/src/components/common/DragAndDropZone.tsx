@@ -1,5 +1,5 @@
 import { useDropzone, type Accept } from 'react-dropzone';
-import {useEffect, useRef, useState} from "preact/hooks";
+import {useEffect, useRef, useState, useCallback} from "preact/hooks";
 import type { ComponentChildren, RefObject } from 'preact';
 
 type DragAndDropZoneProps = {
@@ -48,7 +48,7 @@ const DragAndDropZone = ({
     wrapperRef.current = el;
   };
 
-  const updateOverlayRect = () => {
+  const updateOverlayRect = useCallback(() => {
     const wrapper = wrapperRef.current;
     const target = overlayTargetRef?.current ?? null;
     if (!wrapper || !target) {
@@ -63,7 +63,7 @@ const DragAndDropZone = ({
       width: t.width,
       height: t.height,
     });
-  };
+  }, [overlayTargetRef]);
 
   useEffect(() => {
     updateOverlayRect();
@@ -79,12 +79,11 @@ const DragAndDropZone = ({
       window.removeEventListener('resize', onWin);
       window.removeEventListener('scroll', onWin, true);
     };
-  }, [overlayTargetRef]);
+  }, [overlayTargetRef, updateOverlayRect]);
 
   useEffect(() => {
     if (isDragActive) updateOverlayRect();
-  }, [isDragActive]);
-
+  }, [isDragActive, updateOverlayRect]);
   return (
     <div {...rootProps} ref={setWrapperRef} className={`relative ${className}`.trim()}>
       <input {...inputProps} />
