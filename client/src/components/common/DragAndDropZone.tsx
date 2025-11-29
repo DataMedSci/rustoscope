@@ -1,5 +1,5 @@
 import { useDropzone, type Accept } from 'react-dropzone';
-import { useEffect, useRef, useState, useCallback } from "preact/hooks";
+import { useEffect, useRef, useState, useCallback } from 'preact/hooks';
 import type { ComponentChildren, RefObject } from 'preact';
 
 type DragAndDropZoneProps = {
@@ -19,9 +19,13 @@ const DragAndDropZone = ({
   children,
   overlayTargetRef,
 }: DragAndDropZoneProps) => {
-
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [overlayRect, setOverlayRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [overlayRect, setOverlayRect] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const updateOverlayRect = useCallback(() => {
     const wrapper = wrapperRef.current;
@@ -53,13 +57,20 @@ const DragAndDropZone = ({
   });
 
   // react-dropzone returns props typed for React — we cast them for Preact
-  const rootProps = getRootProps({ refKey: 'ref' }) as { ref?: unknown; [key: string]: unknown };
-  const inputProps = getInputProps() as any;
+  const rootProps = getRootProps({ refKey: 'ref' }) as {
+    ref?: unknown;
+    [key: string]: unknown;
+  };
+  const inputProps = getInputProps() as Record<string, unknown>;
 
   const setWrapperRef = (el: HTMLDivElement | null) => {
     if (typeof rootProps.ref === 'function') {
       rootProps.ref(el);
-    } else if (rootProps.ref && typeof rootProps.ref === 'object' && 'current' in rootProps.ref) {
+    } else if (
+      rootProps.ref &&
+      typeof rootProps.ref === 'object' &&
+      'current' in rootProps.ref
+    ) {
       (rootProps.ref as { current: HTMLDivElement | null }).current = el;
     }
     wrapperRef.current = el;
@@ -85,8 +96,12 @@ const DragAndDropZone = ({
     if (isDragActive) updateOverlayRect();
   }, [isDragActive, updateOverlayRect]);
   return (
-    <div {...rootProps} ref={setWrapperRef} className={`relative ${className}`.trim()}>
-      <input {...inputProps} aria-label="File upload via drag and drop"/>
+    <div
+      {...rootProps}
+      ref={setWrapperRef}
+      className={`relative ${className}`.trim()}
+    >
+      <input {...inputProps} aria-label="File upload via drag and drop" />
       {children}
 
       {isDragActive && overlayRect && (

@@ -10,7 +10,7 @@ import {
   load_image,
   gaussian_blur_image,
   apply_linear_function,
-  Image
+  Image,
 } from '@/wasm';
 import AlgorithmsContainer from '@/components/algorithms/AlgorithmsContainer';
 import {
@@ -27,7 +27,6 @@ type ImageState = {
   imageToConvert: Image | null;
   convertedPixels: Uint8Array | Uint16Array | null;
 };
-
 
 const ImageConverter = () => {
   const { wasmReady } = useWasm();
@@ -48,7 +47,9 @@ const ImageConverter = () => {
   const [units, setUnits] = useState<'px' | 'mm'>('px');
   const [mmPerPx, setMmPerPx] = useState(16 / 10);
   const [previewsAspectRatios, setPreviewsAspectRatios] = useState<number>(1);
-  const [previewElement, setPreviewElement] = useState<HTMLElement | null>(null);
+  const [previewElement, setPreviewElement] = useState<HTMLElement | null>(
+    null
+  );
   const overlayTargetRef = useRef<HTMLElement | null>(null);
 
   const prevSrcUrlRef = useRef<string | null>(null);
@@ -98,8 +99,11 @@ const ImageConverter = () => {
     try {
       const img = load_image(bytes);
       const pixels =
-        img.bits_per_sample === 16 ? img.pixels_u16() :
-        img.bits_per_sample === 8 ? img.pixels_u8() : null;
+        img.bits_per_sample === 16
+          ? img.pixels_u16()
+          : img.bits_per_sample === 8
+          ? img.pixels_u8()
+          : null;
       if (!pixels) {
         setErrorMessage('Failed to extract pixel data from image');
         return;
@@ -145,50 +149,52 @@ const ImageConverter = () => {
     try {
       for (let i = 0; i < enabledAlgorithms.length; i++) {
         const algorithm = enabledAlgorithms[i];
-        
+
         setCurrentAlgorithm(getAlgorithmName(algorithm.type));
         setProcessingProgress(Math.round((i / enabledAlgorithms.length) * 100));
-        
+
         try {
           convert(imageState.imageToConvert, algorithm, setErrorMessage);
         } catch (error) {
-          console.error(`Error occurred while processing algorithm ${algorithm.type}:`, error);
+          console.error(
+            `Error occurred while processing algorithm ${algorithm.type}:`,
+            error
+          );
           return;
-        }   
-        await new Promise(resolve => setTimeout(resolve, YIELD_DELAY_MS));
+        }
+        await new Promise((resolve) => setTimeout(resolve, YIELD_DELAY_MS));
       }
 
-       const finalImage = imageState.imageToConvert;
-    let converted: Uint8Array | Uint16Array | null = null;
-    if (finalImage) {
-      if (finalImage.bits_per_sample === 16) {
-        converted = finalImage.pixels_u16() ?? null;
-      } else if (finalImage.bits_per_sample === 8) {
-        converted = finalImage.pixels_u8() ?? null;
+      const finalImage = imageState.imageToConvert;
+      let converted: Uint8Array | Uint16Array | null = null;
+      if (finalImage) {
+        if (finalImage.bits_per_sample === 16) {
+          converted = finalImage.pixels_u16() ?? null;
+        } else if (finalImage.bits_per_sample === 8) {
+          converted = finalImage.pixels_u8() ?? null;
+        }
       }
-    }
 
-    setImageState(prev => ({
-      ...prev,
-      convertedPixels: converted,
-    }));
-
+      setImageState((prev) => ({
+        ...prev,
+        convertedPixels: converted,
+      }));
 
       setProcessingProgress(100);
       setCurrentAlgorithm('Complete');
-      
+
       if (prevResultUrlRef.current) {
         URL.revokeObjectURL(prevResultUrlRef.current);
       }
-      
+
       setErrorMessage(undefined);
-      
-      await new Promise(resolve => setTimeout(resolve, FINAL_DISPLAY_DELAY_MS));
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, FINAL_DISPLAY_DELAY_MS)
+      );
     } catch (error) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : JSON.stringify(error);
+        error instanceof Error ? error.message : JSON.stringify(error);
       setErrorMessage(`Processing error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
@@ -197,7 +203,7 @@ const ImageConverter = () => {
     }
   };
 
-    const convert = (
+  const convert = (
     image: Image,
     algorithm: ConversionAlgorithm,
     setErrorMessage: (msg: string) => void
@@ -267,8 +273,16 @@ const ImageConverter = () => {
           >
             <ImageJSRootPreview
               pixels={imageState.rawPixels}
-              HorizontalLength={imageState.uploadedImage ? imageState.uploadedImage.horizontal_length : null}
-              VerticalLength={imageState.uploadedImage ? imageState.uploadedImage.vertical_length : null}
+              HorizontalLength={
+                imageState.uploadedImage
+                  ? imageState.uploadedImage.horizontal_length
+                  : null
+              }
+              VerticalLength={
+                imageState.uploadedImage
+                  ? imageState.uploadedImage.vertical_length
+                  : null
+              }
               header="Original Image"
               aspectRatio={previewsAspectRatios}
               setAspectRatio={setPreviewsAspectRatios}
@@ -283,8 +297,16 @@ const ImageConverter = () => {
         <div className="w-full flex items-start justify-center mt-10 rounded-md relative">
           <ImageJSRootPreview
             pixels={imageState.convertedPixels}
-            HorizontalLength={imageState.imageToConvert ? imageState.imageToConvert.horizontal_length : null}
-            VerticalLength={imageState.imageToConvert ? imageState.imageToConvert.vertical_length : null}
+            HorizontalLength={
+              imageState.imageToConvert
+                ? imageState.imageToConvert.horizontal_length
+                : null
+            }
+            VerticalLength={
+              imageState.imageToConvert
+                ? imageState.imageToConvert.vertical_length
+                : null
+            }
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
@@ -301,7 +323,7 @@ const ImageConverter = () => {
                   {currentAlgorithm || 'Processing...'}
                 </div>
                 <div className="w-32 bg-gray-200 rounded-full h-1">
-                  <div 
+                  <div
                     className="bg-green-500 h-1 rounded-full transition-all duration-300"
                     style={{ width: `${processingProgress}%` }}
                   ></div>
@@ -332,8 +354,8 @@ const ImageConverter = () => {
           <button
             type="button"
             className={`cursor-pointer text-center flex items-center justify-center px-4 py-2 rounded-md h-[30px] w-[135px] text-white transition-colors ${
-              isProcessing 
-                ? 'bg-gray-400 cursor-not-allowed' 
+              isProcessing
+                ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-green-600 hover:bg-green-700'
             }`}
             onClick={handleRun}
@@ -342,51 +364,55 @@ const ImageConverter = () => {
             {isProcessing ? 'Processing...' : 'Run'}
           </button>
         </div>
-        
-  <div className="mb-4 p-3 rounded-md border border-gray-200 bg-white">
-  <div className="text-sm font-semibold mb-2">Units</div>
 
-  <div className="flex items-center gap-4 mb-2 flex-nowrap">
-    <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
-      <input
-        type="radio"
-        name="units"
-        value="px"
-        checked={units === 'px'}
-        onChange={() => setUnits('px')}
-      />
-      <span>Pixels</span>
-    </label>
+        <div className="mb-4 p-3 rounded-md border border-gray-200 bg-white">
+          <div className="text-sm font-semibold mb-2">Units</div>
 
-    <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
-      <input
-        type="radio"
-        name="units"
-        value="mm"
-        checked={units === 'mm'}
-        onChange={() => setUnits('mm')}
-      />
-      <span>Millimeters</span>
-    </label>
+          <div className="flex items-center gap-4 mb-2 flex-nowrap">
+            <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
+              <input
+                type="radio"
+                name="units"
+                value="px"
+                checked={units === 'px'}
+                onChange={() => setUnits('px')}
+              />
+              <span>Pixels</span>
+            </label>
 
-      {units === 'mm' && (
-    <div className="flex-1 flex justify-center min-w-0">
-      <input
-        type="text"
-        inputMode="decimal"
-        autoComplete={'off'}
-        className="w-20 flex-none rounded-md border border-gray-300 px-2 py-1 text-right"
-        value={mmPerPx}
-        onInput={(e) => {
-          const v = Number((e as any).currentTarget.value.replace(',', '.'));
-          if (Number.isFinite(v) && v > 0) setMmPerPx(v);
-        }}
-      />
-      <span className="text-s text-gray-500 self-center px-1">mm/px</span>
-    </div>
-  )}
-  </div>
-</div>
+            <label className="inline-flex items-center gap-2 cursor-pointer shrink-0">
+              <input
+                type="radio"
+                name="units"
+                value="mm"
+                checked={units === 'mm'}
+                onChange={() => setUnits('mm')}
+              />
+              <span>Millimeters</span>
+            </label>
+
+            {units === 'mm' && (
+              <div className="flex-1 flex justify-center min-w-0">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete={'off'}
+                  className="w-20 flex-none rounded-md border border-gray-300 px-2 py-1 text-right"
+                  value={mmPerPx}
+                  onInput={(e) => {
+                    const v = Number(
+                      (e as any).currentTarget.value.replace(',', '.')
+                    );
+                    if (Number.isFinite(v) && v > 0) setMmPerPx(v);
+                  }}
+                />
+                <span className="text-s text-gray-500 self-center px-1">
+                  mm/px
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
 
         <AlgorithmsContainer
           algorithms={algorithms}
