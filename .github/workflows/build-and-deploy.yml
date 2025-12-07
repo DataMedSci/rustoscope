@@ -39,7 +39,7 @@ jobs:
           echo "out_dir=$(pwd)/../client" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js (for client build)
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
 
