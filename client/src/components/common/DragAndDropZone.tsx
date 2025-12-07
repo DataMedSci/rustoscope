@@ -50,8 +50,18 @@ const DragAndDropZone = ({
     noClick: true,
     maxFiles: multiple ? undefined : 1,
     onDropAccepted: async (files) => {
-      const f = files[0];
-      if (f) await onFileDrop(f);
+      try {
+        if (multiple) {
+          for (const file of files) {
+            await onFileDrop(file);
+          }
+        } else {
+          const f = files[0];
+          if (f) await onFileDrop(f);
+        }
+      } catch (error) {
+        console.error('Error handling dropped files:', error);
+      }
     },
     onDragEnter: () => updateOverlayRect(),
   });
@@ -95,6 +105,23 @@ const DragAndDropZone = ({
   useEffect(() => {
     if (isDragActive) updateOverlayRect();
   }, [isDragActive, updateOverlayRect]);
+
+  const overlayStyle = overlayRect
+    ? {
+        position: 'absolute',
+        left: overlayRect.left,
+        top: overlayRect.top,
+        width: overlayRect.width,
+        height: overlayRect.height,
+      }
+    : {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: '100%',
+        height: '100%',
+      };
+
   return (
     <div
       {...rootProps}
@@ -104,15 +131,9 @@ const DragAndDropZone = ({
       <input {...inputProps} aria-label="File upload via drag and drop" />
       {children}
 
-      {isDragActive && overlayRect && (
+      {isDragActive && (
         <div
-          style={{
-            position: 'absolute',
-            left: overlayRect.left,
-            top: overlayRect.top,
-            width: overlayRect.width,
-            height: overlayRect.height,
-          }}
+          style={overlayStyle}
           className="bg-orange-100/60 border-2 border-orange-400 rounded-md pointer-events-none"
         />
       )}
