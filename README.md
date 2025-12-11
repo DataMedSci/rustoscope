@@ -8,8 +8,36 @@ WebAssembly image analysis, using Rust.
 
 ## 🌐 Live Demo
 
-You can view the latest deployed version here:  
+You can view the latest deployed version here:
 🔗 [https://datamedsci.github.io/rustoscope/](https://datamedsci.github.io/rustoscope/)
+
+## 🎯 Aim of the Project
+
+**Rustoscope** is a high-performance, browser-based tool designed for **scientific image analysis**. By leveraging **Rust** and **WebAssembly (Wasm)**, it enables users to run computationally intensive image processing algorithms directly on the client side.
+
+## 📸 Usage
+
+Rustoscope provides a streamlined workflow for image analysis:
+
+1.  **Upload**: Drag and drop your image (PNG, JPG, TIFF) or use the file picker.
+
+    ![Drag and Drop Upload](assets/dragdrop_image.png)
+
+2.  **Visualize**: The image is rendered using **JSROOT**, allowing you to inspect pixel intensities with a configurable color map.
+
+    - _Feature_: Toggle axes (px/mm) and adjust the scale.
+
+3.  **Process**: Select algorithms from the sidebar to apply to your image.
+
+    - **Hot Pixel Removal**: Remove noise using percentile clipping.
+    - **Blur**: Apply Gaussian or Median blur to smooth data.
+    - **Linear Transform**: Adjust intensity using $a \cdot x + b$.
+
+    ![Algorithm Selection](assets/algorithms_image.png)
+
+4.  **Analyze**: View the "Original" and "Processed" images side-by-side to verify results instantly.
+
+    ![Image Processing Results](assets/processing_image.png)
 
 ## 📦 Getting Started
 
@@ -20,10 +48,10 @@ Make sure the following tools are installed:
 - [`pnpm`](https://pnpm.io/)
 - [`wasm-pack`](https://rustwasm.github.io/wasm-pack/)
 
-> 💡 Additionally, ensure Rust and `cargo` are installed. If not, install them with:  
+> 💡 Additionally, ensure Rust and `cargo` are installed. If not, install them with:
 > `curl https://sh.rustup.rs -sSf | sh`
 >
-> **Note:** We recommend instatllation via [rustup](https://rustup.rs/) instead of using your system package manager, as we encountered issues with the `wasm-pack` package in some distributions.
+> **Note:** We recommend installation via [rustup](https://rustup.rs/) instead of using your system package manager, as we encountered issues with the `wasm-pack` package in some distributions.
 > We tested the project using `1.86.0` version of Rust, thus we recommend using this version or later.
 
 ## 📖 Project Structure
@@ -32,8 +60,8 @@ The project is structured as follows:
 
 ```
 rustoscope/
-├── api/                # Rust backend for WebAssembly
-├── client/             # Frontend application
+├── api/                # Rust backend for WebAssembly (Algorithms & Image Handling)
+├── client/             # Frontend application (React, Vite, JSROOT)
 ├── .github/            # GitHub Actions workflows
 ├── .gitignore          # Git ignore file
 └── README.md           # This file
@@ -75,42 +103,58 @@ To deploy the application (inside the `client/` directory):
 pnpm run deploy
 ```
 
-## ✨ Current functionalities
+## ✨ Current Functionalities
 
-- Image upload via drag-and-drop or file picker (PNG, JPG/JPEG, TIFF)
-- Side-by-side Original and Converted previews with a stable aspect ratio
-- Interactive preview rendered with JSROOT (color map, grid, auto z-range)
-- Axes shown in px or mm with a configurable mm/px scale
-- Selectable, chainable processing algorithms executed in WebAssembly (Rust):
-  - Hot pixel removal (percentile clipping)
-  - Median blur (configurable kernel radius)
-  - Gaussian blur (sigma)
-  - Linear transform (a·x + b)
+- **Input Support**:
+  - Drag-and-drop or file picker upload.
+  - Supports PNG, JPG/JPEG, and TIFF formats.
+- **Scientific Visualization**:
+  - **JSROOT Integration**: Interactive rendering of **intensity maps** with color maps, grids, and auto z-range.
+  - **Stable Aspect Ratio**: Side-by-side comparison of Original vs. Converted images.
+  - **Measurement**: Axes display in pixels or millimeters with configurable scale.
+- **Wasm-Powered Algorithms**:
+  - **Hot Pixel Removal**: Percentile clipping to remove high-intensity noise (supports 8/16-bit).
+  - **Median Blur**: Configurable kernel radius for noise reduction (supports 8/16-bit).
+  - **Gaussian Blur**: Smoothing with adjustable sigma (supports 8/16-bit).
+  - **Linear Transform**: Pixel intensity adjustment ($a \cdot x + b$) (supports 8/16-bit).
+- **Data Handling**:
+  - Direct processing of 8-bit and 16-bit grayscale data.
 
-## 🧑‍💻 Contributions by [Marek Swakoń](https://github.com/Marek55S)
+## 📜 Development History
 
-This fork diverges from the original repository (https://github.com/jkbstepien/rustoscope) by focusing on raw pixel processing and scientific visualization. My main additions and changes:
+The project has evolved through two distinct phases under the continuous supervision of **PhD. Leszek Grzanka**, combining academic research with professional scientific application:
 
-- Drag-and-drop image upload (in addition to the file picker)
-- JSROOT-based image preview rendering from raw pixels (not just PNG blobs)
-  - Stable aspect ratio container for previews
-  - Axes in px or mm and configurable mm/px scale
-- Direct handling of 8-bit and 16-bit grayscale data via the Rust WASM API (load and render intensity maps; no PNG conversion required)
-- Added/extended algorithms and parameters exposed in the UI:
-  - Hot pixel removal (percentile clipping)
-  - Linear transform (a·x + b)
-  - Median and Gaussian blur bindings operating on the in-memory image
-- Error and status messaging tailored to the new processing flow
+1.  **Academic Origins (Large Scale Computing Course)**:
+    The project was originally created by **Jakub Stępień**, **Kacper Cienkosz**, and **Adam Mytnik** as part of the _Large Scale Computing_ course at **AGH University of Science and Technology** in Kraków. This phase established the core architecture and implemented the first set of WASM-powered algorithms:
 
-Note: The upstream repository already included a side-by-side preview layout and a progress indicator for algorithm execution; those were retained and adapted to the new pixel-processing pipeline here.
+    - **Core Architecture**: A robust Rust backend compiling to WebAssembly, integrated with a React frontend for side-by-side image comparison.
+    - **Implemented Algorithms**:
+      - **Basic Transformations**: Grayscale conversion and color inversion.
+      - **Noise Reduction**: Gaussian blur (sigma) and Median blur (kernel radius).
+      - **Pixel Manipulation**: Percentile clipping for hot pixel removal.
 
-## Authors
+    Original repository: [jkbstepien/rustoscope](https://github.com/jkbstepien/rustoscope)
 
-Contributors:
+<br>
 
-1. [Jakub Stępień](https://github.com/jkbstepien)
-2. [Kacper Cienkosz](https://github.com/kacienk)
-3. [Adam Mytnik](https://github.com/AdamMytnik)
-4. [Marek Swakoń](https://github.com/Marek55S)
+2.  **Scientific Expansion (IFJ PAN Traineeship)**:
+    The project was significantly expanded during the traineeship of **Marek Swakoń** at the **Institute of Nuclear Physics Polish Academy of Sciences (IFJ PAN)**
+    This phase shifted the focus towards scientific data analysis, introducing:
+    - **16-bit Support**: Handling of 16-bit grayscale data (intensity maps).
+    - **Advanced Visualization**: Integration of **JSROOT** for interactive, scientific-grade image previews (color maps, auto z-range, grid).
+    - **Support for Drag-and-Drop Upload**: Enhanced user experience for image input.
+    - **Scale Measurement**: Displaying axes in pixels or millimeters with configurable scale.
+    - **Linear Transform Algorithm**: Pixel intensity adjustment using the formula $a \cdot x + b$.
 
-This project was created as a part of Large Scale Computing course at AGH University of Science and Technology in Kraków, Poland and continued during internship at Institute of Nuclear Physics, Polish Academy of Sciences (IFJ PAN), under the supervision of [PhD. Leszek Grzanka](https://github.com/grzanka).
+## 👥 Authors & Contributors
+
+**Core Contributors**:
+
+1.  **Jakub Stępień** ([@jkbstepien](https://github.com/jkbstepien))
+2.  **Kacper Cienkosz** ([@kacienk](https://github.com/kacienk))
+3.  **Adam Mytnik** ([@AdamMytnik](https://github.com/AdamMytnik))
+4.  **Marek Swakoń** ([@Marek55S](https://github.com/Marek55S))
+
+**Supervision**:
+
+- **PhD. Leszek Grzanka** ([@grzanka](https://github.com/grzanka))
