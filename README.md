@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./logo.png" width="200" alt="Project Logo">
+  <img src="./assets/logo.png" width="200" alt="Project Logo">
 </div>
 
 # Rustoscope
