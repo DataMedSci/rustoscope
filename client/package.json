@@ -21,7 +21,7 @@
     "react-select": "^5.10.2"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.1",
+    "@preact/preset-vite": "^2.10.2",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
