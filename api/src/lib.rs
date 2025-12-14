@@ -1,4 +1,4 @@
-use image::{DynamicImage, ImageOutputFormat};
+use image::{DynamicImage, ImageFormat};
 use imageproc::filter::median_filter;
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
@@ -19,7 +19,7 @@ pub fn gaussian_blur(image: &[u8], sigma: f32) -> Result<Vec<u8>, JsValue> {
 
     let mut buf = Cursor::new(Vec::new());
     blurred
-        .write_to(&mut buf, ImageOutputFormat::Png)
+        .write_to(&mut buf, ImageFormat::Png)
         .map_err(|e| JsValue::from_str(&format!("PNG encode error: {}", e)))?;
 
     Ok(buf.into_inner())
@@ -39,7 +39,7 @@ pub fn median_blur(image: &[u8], kernel_radius: u32) -> Result<Vec<u8>, JsValue>
 
     let mut buf = Cursor::new(Vec::new());
     DynamicImage::ImageRgb8(filtered)
-        .write_to(&mut buf, ImageOutputFormat::Png)
+        .write_to(&mut buf, ImageFormat::Png)
         .map_err(|e| JsValue::from_str(&format!("PNG encode error: {}", e)))?;
 
     Ok(buf.into_inner())
