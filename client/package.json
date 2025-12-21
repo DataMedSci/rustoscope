@@ -14,9 +14,9 @@
     "build-css-watch": "npx @tailwindcss/cli -i ./src/index.css -o ./public/output.css --watch"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.8",
-    "jsroot": "^7.9.1",
-    "preact": "^10.26.5",
+    "@tailwindcss/vite": "^4.1.18",
+    "jsroot": "^7.10.1",
+    "preact": "^10.28.0",
     "react-dropzone": "^14.3.8",
     "react-select": "^5.10.2"
   },
