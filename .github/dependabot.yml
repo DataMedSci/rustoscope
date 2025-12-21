@@ -1,19 +1,39 @@
 version: 2
 updates:
   # Enable version updates for npm
-  - package-ecosystem: "npm"
-    directory: "client/"
+  - package-ecosystem: 'npm'
+    directory: 'client/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+      major:
+        update-types:
+          - 'major'
 
   # Enable version updates for Cargo
-  - package-ecosystem: "cargo"
-    directory: "api/"
+  - package-ecosystem: 'cargo'
+    directory: 'api/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+      major:
+        update-types:
+          - 'major'
 
   # Enable version updates for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    groups:
+      all-actions:
+        patterns:
+          - '*'
