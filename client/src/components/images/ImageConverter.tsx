@@ -281,6 +281,7 @@ const ImageConverter = () => {
             accept={acceptedFileTypes}
             overlayTargetRef={overlayTargetRef}
             onFileDrop={processFile}
+            onFileReject={handleFileReject}
             className="w-full"
           >
             <ImageJSRootPreview
@@ -322,7 +323,6 @@ const ImageConverter = () => {
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
-            error={errorMessage}
             units={units}
             mmPerPx={mmPerPx}
           />
