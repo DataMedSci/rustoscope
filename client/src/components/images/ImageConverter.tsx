@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { TargetedEvent } from 'preact/compat';
-import { Accept, FileRejection } from 'react-dropzone';
+import type { Accept, FileRejection } from 'react-dropzone';
 
 import { useWasm } from '@/hooks/useWasm';
 import ImageJSRootPreview from './ImageJSRootPreview';
