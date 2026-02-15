@@ -1,9 +1,11 @@
-import { useDropzone, type Accept } from 'react-dropzone';
+import { useDropzone } from 'react-dropzone';
+import type { FileRejection, Accept } from 'react-dropzone';
 import { useEffect, useRef, useState, useCallback } from 'preact/hooks';
 import type { ComponentChildren, RefObject } from 'preact';
 
 type DragAndDropZoneProps = {
   onFileDrop: (file: File) => void | Promise<void>;
+  onFileReject?: (rejectedFiles: FileRejection[]) => void;
   accept?: Accept;
   multiple?: boolean;
   className?: string;
@@ -13,6 +15,7 @@ type DragAndDropZoneProps = {
 
 const DragAndDropZone = ({
   onFileDrop,
+  onFileReject,
   accept,
   multiple = false,
   className = '',
@@ -61,6 +64,14 @@ const DragAndDropZone = ({
         }
       } catch (error) {
         console.error('Error handling dropped files:', error);
+      }
+    },
+    onDropRejected: (rejectedFiles) => {
+      if (!onFileReject) return;
+      try {
+        onFileReject(rejectedFiles);
+      } catch (error) {
+        console.error('Error handling rejected files:', error);
       }
     },
     onDragEnter: () => updateOverlayRect(),

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { TargetedEvent } from 'preact/compat';
-import { Accept } from 'react-dropzone';
+import type { Accept, FileRejection } from 'react-dropzone';
 
 import { useWasm } from '@/hooks/useWasm';
 import ImageJSRootPreview from './ImageJSRootPreview';
@@ -60,6 +60,25 @@ const ImageConverter = () => {
     'image/jpeg': ['.jpeg', '.jpg'],
   };
 
+  const handleFileReject = (rejectedFiles: FileRejection[]) => {
+    if (rejectedFiles.length === 0) return;
+    const reasons = rejectedFiles
+      .map((rejection) => {
+        const errors = rejection.errors
+          .map((err) => {
+            if (err.code === 'file-invalid-type') {
+              return `${rejection.file.name}: unsupported type`;
+            }
+            return `${rejection.file.name}: ${err.message}`;
+          })
+          .join(', ');
+        return errors;
+      })
+      .join('; ');
+
+    setErrorMessage(`Rejected files: ${reasons}`);
+  };
+
   const cleanupBlobUrls = () => {
     if (prevSrcUrlRef.current) {
       URL.revokeObjectURL(prevSrcUrlRef.current);
@@ -95,8 +114,8 @@ const ImageConverter = () => {
         img.bits_per_sample === 16
           ? img.pixels_u16()
           : img.bits_per_sample === 8
-          ? img.pixels_u8()
-          : null;
+            ? img.pixels_u8()
+            : null;
       if (!pixels) {
         setErrorMessage('Failed to extract pixel data from image');
         return;
@@ -262,6 +281,7 @@ const ImageConverter = () => {
             accept={acceptedFileTypes}
             overlayTargetRef={overlayTargetRef}
             onFileDrop={processFile}
+            onFileReject={handleFileReject}
             className="w-full"
           >
             <ImageJSRootPreview
@@ -303,7 +323,6 @@ const ImageConverter = () => {
             header={'Converted Image'}
             aspectRatio={previewsAspectRatios}
             setAspectRatio={setPreviewsAspectRatios}
-            error={errorMessage}
             units={units}
             mmPerPx={mmPerPx}
           />
