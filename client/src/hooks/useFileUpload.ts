@@ -70,6 +70,7 @@ export function useFileUpload(wasmReady: boolean) {
         imageState,
         setImageState,
         errorMessage,
+        setErrorMessage,
         processFile,
         handleFileReject,
     }
