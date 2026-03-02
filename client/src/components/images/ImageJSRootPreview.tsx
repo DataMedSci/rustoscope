@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { BIT, createHistogram, draw } from 'jsroot';
+import { BIT, createHistogram, draw, cleanup } from 'jsroot';
 import type { RefObject } from 'preact';
 
 type TypedPixels = Uint8Array | Uint16Array | Float32Array;
@@ -112,7 +112,10 @@ const ImagePreview = ({
 
     // Cleanup on unmount/re-render
     return () => {
-      if (host) host.innerHTML = '';
+      if (containerRef.current) {
+        cleanup(containerRef.current);
+        containerRef.current.innerHTML = '';
+      }
     };
   }, [
     pixels,
