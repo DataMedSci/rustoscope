@@ -30,7 +30,7 @@ export function useFileUpload(wasmReady: boolean) {
                 return;
             }
             if (!isAllowedFileType(file)){
-                setErrorMessage(' Unsupported image type. Supported types are: PNG, TIFF, JPEG');
+                setErrorMessage('Unsupported image type. Supported types are: PNG, TIFF, JPEG');
                 return;
             }
 

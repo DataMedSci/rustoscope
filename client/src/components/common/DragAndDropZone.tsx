@@ -55,6 +55,7 @@ const DragAndDropZone = ({
     maxFiles: multiple ? undefined : 1,
     onDropAccepted: async (files) => {
       try {
+        setLocalError(undefined);
         if (multiple) {
           for (const file of files) {
             await onFileDrop(file);
@@ -71,7 +72,10 @@ const DragAndDropZone = ({
       if (rejectedFiles.length === 0) return;
       setLocalError(`Rejected: ${formatRejectionReasons(rejectedFiles)}`);
     },
-    onDragEnter: () => updateOverlayRect(),
+    onDragEnter: () => {
+      setLocalError(undefined);
+      updateOverlayRect();
+    },
   });
 
   // react-dropzone returns props typed for React — we cast them for Preact
