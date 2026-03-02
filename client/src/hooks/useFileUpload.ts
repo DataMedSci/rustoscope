@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'preact/hooks';
-import type { FileRejection } from 'react-dropzone';
 import { load_image, Image } from '@/wasm';
-import { isAllowedFileType, formatRejectionReasons } from '@/utils/fileValidation';
+import { isAllowedFileType } from '@/utils/fileValidation';
 import { extractPixels } from '@/utils/imageConversion';
 
 export type ImageState = {
@@ -61,17 +60,11 @@ export function useFileUpload(wasmReady: boolean) {
         [wasmReady]
     );
 
-    const handleFileReject = useCallback((rejectedFiles: FileRejection[]) => {
-        if (rejectedFiles.length === 0) return;
-        setErrorMessage(`Rejected files: ${formatRejectionReasons(rejectedFiles)}`);
-    }, []);
-
     return {
         imageState,
         setImageState,
         errorMessage,
         setErrorMessage,
         processFile,
-        handleFileReject,
     }
 }

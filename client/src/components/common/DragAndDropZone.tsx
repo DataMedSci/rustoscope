@@ -2,10 +2,10 @@ import { useDropzone } from 'react-dropzone';
 import type { FileRejection, Accept } from 'react-dropzone';
 import { useEffect, useRef, useState, useCallback } from 'preact/hooks';
 import type { ComponentChildren, RefObject } from 'preact';
+import { formatRejectionReasons } from '@/utils/fileValidation';
 
 type DragAndDropZoneProps = {
   onFileDrop: (file: File) => void | Promise<void>;
-  onFileReject?: (rejectedFiles: FileRejection[]) => void;
   accept?: Accept;
   multiple?: boolean;
   className?: string;
@@ -15,7 +15,6 @@ type DragAndDropZoneProps = {
 
 const DragAndDropZone = ({
   onFileDrop,
-  onFileReject,
   accept,
   multiple = false,
   className = '',
@@ -47,6 +46,8 @@ const DragAndDropZone = ({
     });
   }, [overlayTargetRef]);
 
+  const [localError, setLocalError] = useState<string | undefined>();
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept,
     multiple,
@@ -67,12 +68,8 @@ const DragAndDropZone = ({
       }
     },
     onDropRejected: (rejectedFiles) => {
-      if (!onFileReject) return;
-      try {
-        onFileReject(rejectedFiles);
-      } catch (error) {
-        console.error('Error handling rejected files:', error);
-      }
+      if (rejectedFiles.length === 0) return;
+      setLocalError(`Rejected: ${formatRejectionReasons(rejectedFiles)}`);
     },
     onDragEnter: () => updateOverlayRect(),
   });
@@ -147,6 +144,12 @@ const DragAndDropZone = ({
           style={overlayStyle}
           className="bg-orange-100/60 border-2 border-orange-400 rounded-md pointer-events-none"
         />
+      )}
+
+      {localError && (
+        <div className="absolute bottom-2 left-2 right-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200 z-20">
+          {localError}
+        </div>
       )}
     </div>
   );

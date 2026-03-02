@@ -24,7 +24,6 @@ const ImageConverter = () => {
     errorMessage,
     setErrorMessage,
     processFile,
-    handleFileReject,
   } = useFileUpload(wasmReady);
 
   const { isProcessing, processingProgress, currentAlgorithm, handleRun } =
@@ -49,7 +48,6 @@ const ImageConverter = () => {
             accept={ACCEPTED_FILE_TYPES}
             overlayTargetRef={overlayTargetRef}
             onFileDrop={processFile}
-            onFileReject={handleFileReject}
             className="w-full"
           >
             <ImagePreview
@@ -118,7 +116,7 @@ const ImageConverter = () => {
           <input
             id="image-upload"
             type="file"
-            accept="image/*"
+            accept=".png,.jpg,.jpeg,.tiff,.tif,image/png,image/jpeg,image/tiff"
             onChange={handleUpload}
             className="hidden"
           />
